@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Matter.js - 落下する球のシミュレーション</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+                background-color: #1a1a1a;
+                color: white;
+            }
+
+            #canvas-container {
+                display: flex;
+                justify-content: center;
+                margin: 20px 0;
+            }
+
+            canvas {
+                border: 2px solid #444;
+                background-color: #2a2a2a;
+            }
+
+            .controls {
+                text-align: center;
+                margin: 20px 0;
+            }
+
+            button {
+                background-color: #4a90e2;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                margin: 0 10px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            button:hover {
+                background-color: #357abd;
+            }
+
+            .info {
+                text-align: center;
+                margin: 10px 0;
+                font-size: 14px;
+                color: #ccc;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Matter.js - 落下する球のシミュレーション</h1>
+        <div class="info">
+            大きな球が小さな固定球の間を落下します。<br />
+            <strong style="color: #2ecc71">緑のエリア</strong
+            >を通過すると「あたり」、<strong style="color: #e74c3c"
+                >赤のエリア</strong
+            >を通過してもコンソール出力されません。
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <button onclick="dropBall()">球を落とす</button>
+            <button onclick="resetSimulation()">リセット</button>
+        </div>
+
+        <div class="info">
+            F12キーを押してコンソールを開き、球が底部を通過する様子を確認してください。
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+        <script>
+            // Matter.jsの主要モジュールを取得
+            const {
+                Engine,
+                Render,
+                Runner,
+                Bodies,
+                Composite,
+                Events,
+                Mouse,
+                MouseConstraint,
+            } = Matter;
+
+            // エンジンを作成
+            const engine = Engine.create();
+            const world = engine.world;
+
+            // レンダラーを作成
+            const canvas = document.getElementById("canvas");
+            const render = Render.create({
+                canvas: canvas,
+                engine: engine,
+                options: {
+                    width: 800,
+                    height: 600,
+                    wireframes: false,
+                    background: "transparent",
+                    showAngleIndicator: true,
+                    showVelocity: false,
+                },
+            });
+
+            // 重力を設定
+            engine.world.gravity.y = 3.0;
+
+            // 壁を作成
+            const walls = [
+                // 左の壁
+                Bodies.rectangle(0, 300, 50, 600, {
+                    isStatic: true,
+                    render: { fillStyle: "#444" },
+                }),
+                // 右の壁
+                Bodies.rectangle(800, 300, 50, 600, {
+                    isStatic: true,
+                    render: { fillStyle: "#444" },
+                }),
+            ];
+
+            // 釘を完全にランダムに生成
+            const nails = [];
+            const nailRadius = 4; // 釘を上から見た時くらいの小さいサイズ
+            const nailCount = 80; // 釘の数
+
+            for (let i = 0; i < nailCount; i++) {
+                // 完全にランダムな位置を生成
+                const x = 80 + Math.random() * 640; // 左右の壁から80px離れた範囲
+                const y = 120 + Math.random() * 380; // 上部と底部エリアを避けた範囲
+
+                const nail = Bodies.circle(x, y, nailRadius, {
+                    isStatic: true,
+                    render: {
+                        fillStyle: "#e74c3c",
+                        strokeStyle: "#c0392b",
+                        lineWidth: 1,
+                    },
+                });
+                nails.push(nail);
+            }
+
+            // 底部の「あたり」エリアを作成（視認性の良い緑色）
+            const winZone = Bodies.rectangle(400, 570, 200, 40, {
+                isSensor: true,
+                isStatic: true,
+                render: {
+                    fillStyle: "#2ecc71", // 明るい緑色
+                    strokeStyle: "#27ae60", // 濃い緑の縁
+                    lineWidth: 3,
+                    opacity: 0.8,
+                },
+            });
+
+            // 底部の通常エリア（あたりでない場所）
+            const normalZone = Bodies.rectangle(400, 570, 600, 40, {
+                isSensor: true,
+                isStatic: true,
+                render: {
+                    fillStyle: "#e74c3c", // 赤色
+                    strokeStyle: "#c0392b", // 濃い赤の縁
+                    lineWidth: 2,
+                    opacity: 0.5,
+                },
+            });
+
+            // 落下する大きな球を格納する配列
+            let fallingBalls = [];
+
+            // 球を落とす関数
+            function dropBall() {
+                const bigBall = Bodies.circle(
+                    200 + Math.random() * 400, // ランダムなX位置
+                    50, // 上部から落下
+                    12, // 半径（元の半分のサイズ）
+                    {
+                        render: {
+                            fillStyle: "#3498db",
+                            strokeStyle: "#2980b9",
+                            lineWidth: 3,
+                        },
+                        restitution: 0.6, // 弾性
+                        friction: 0.3,
+                    },
+                );
+
+                fallingBalls.push(bigBall);
+                Composite.add(world, bigBall);
+
+                console.log(`新しい球を落下開始 (ID: ${bigBall.id})`);
+            }
+
+            // 衝突検知イベント - あたりエリアのみで反応
+            Events.on(engine, "collisionStart", function (event) {
+                const pairs = event.pairs;
+
+                pairs.forEach((pair) => {
+                    const { bodyA, bodyB } = pair;
+
+                    // あたりエリア（緑の部分）との衝突をチェック
+                    if (bodyA === winZone || bodyB === winZone) {
+                        const ball = bodyA === winZone ? bodyB : bodyA;
+
+                        // 落下する球かどうかチェック
+                        if (fallingBalls.includes(ball)) {
+                            console.log(
+                                `🎉 あたり！球が当たりエリアを通過しました！ (Ball ID: ${ball.id}, 位置: x=${Math.round(ball.position.x)}, y=${Math.round(ball.position.y)})`,
+                            );
+
+                            // 通過した球は配列から削除（重複通知を防ぐ）
+                            const index = fallingBalls.indexOf(ball);
+                            if (index > -1) {
+                                fallingBalls.splice(index, 1);
+                            }
+                        }
+                    }
+                });
+            });
+
+            // シミュレーションをリセットする関数
+            function resetSimulation() {
+                // 全ての落下球を削除
+                fallingBalls.forEach((ball) => {
+                    Composite.remove(world, ball);
+                });
+                fallingBalls = [];
+                console.log("シミュレーションをリセットしました");
+            }
+
+            // マウスコントロールを追加
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: {
+                        visible: false,
+                    },
+                },
+            });
+
+            // 世界にオブジェクトを追加
+            Composite.add(world, [
+                ...walls,
+                ...nails, // 釘を追加
+                normalZone, // 通常エリア（赤）を先に追加
+                winZone, // あたりエリア（緑）を後に追加（上に表示される）
+                mouseConstraint,
+            ]);
+
+            // レンダラーとエンジンを開始
+            Render.run(render);
+            const runner = Runner.create();
+            Runner.run(runner, engine);
+
+            // 初期の球を1個落とす
+            setTimeout(() => {
+                dropBall();
+            }, 1000);
+
+            // デバッグ情報
+            console.log("🚀 Matter.js シミュレーション開始");
+            console.log(`釘の数: ${nails.length}`);
+            console.log(
+                "「球を落とす」ボタンを押すか、マウスで球をドラッグして遊べます",
+            );
+            console.log("緑のエリアに球が入ると「あたり」が出力されます！");
+        </script>
+    </body>
+</html>
