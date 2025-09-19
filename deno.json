@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["pachislo.js"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "tasks": {
+    "dev": "deno run --watch src/pachislo.ts",
+    "test": "deno test",
+    "demo": "deno run src/pachislo.ts",
+    "serve": "deno run --allow-net --allow-read server.ts",
+    "check": "deno check src/pachislo.ts",
+    "lint": "deno lint src/",
+    "fmt": "deno fmt src/"
+  },
+  "exclude": ["node_modules/", "dist/"]
+}

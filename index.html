@@ -1,276 +1,1526 @@
 <!doctype html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Matter.js - 落下する球のシミュレーション</title>
-        <style>
-            body {
-                margin: 0;
-                padding: 20px;
-                font-family: Arial, sans-serif;
-                background-color: #1a1a1a;
-                color: white;
-            }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matter.js - デュアルパチンコシミュレーション</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        align-items: center;
+        padding: 32px;
+        background: #111;
+        color: #eee;
+      }
 
-            #canvas-container {
-                display: flex;
-                justify-content: center;
-                margin: 20px 0;
-            }
+      .game-container {
+        display: flex;
+        gap: 80px;
+        justify-content: center;
+        align-items: flex-start;
+      }
 
-            canvas {
-                border: 2px solid #444;
-                background-color: #2a2a2a;
-            }
+      .game-unit {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+      }
 
-            .controls {
-                text-align: center;
-                margin: 20px 0;
-            }
+      .canvas-container {
+        flex: 0 0 auto;
+      }
 
-            button {
-                background-color: #4a90e2;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                margin: 0 10px;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-            }
+      canvas {
+        border: 2px solid #444;
+        background-color: #2a2a2a;
+      }
 
-            button:hover {
-                background-color: #357abd;
-            }
+      .right-panel {
+        flex: 0 0 250px;
+        padding: 20px;
+      }
 
-            .info {
-                text-align: center;
-                margin: 10px 0;
-                font-size: 14px;
-                color: #ccc;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Matter.js - 落下する球のシミュレーション</h1>
-        <div class="info">
-            大きな球が小さな固定球の間を落下します。<br />
-            <strong style="color: #2ecc71">緑のエリア</strong
-            >を通過すると「あたり」、<strong style="color: #e74c3c"
-                >赤のエリア</strong
-            >を通過してもコンソール出力されません。
+      .state {
+        padding: 20px;
+      }
+
+      .slot-container {
+        margin-top: 300px;
+        justify-content: center;
+        align-items: center;
+        display: flex;
+        gap: 10px;
+      }
+
+      .slot-num {
+        height: 100px;
+        font-size: 50px;
+        text-align: center;
+        flex: 1;
+      }
+
+      :root {
+        --reel-width: 120px;
+        --cell-height: 64px; /* 1つの数字セルの高さ */
+        --visible-cells: 3; /* 見えるセル数（中央＋上下の見切れ） */
+      }
+
+      .slot-wrap {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .reel {
+        width: var(--reel-width);
+        height: calc(
+          var(--cell-height) * 1
+        ); /* 見せたい中央の高さ（中央セル1つ分） */
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #222, #0f0f12);
+        box-shadow:
+          0 6px 18px rgba(0, 0, 0, 0.7),
+          inset 0 2px 0 rgba(255, 255, 255, 0.02);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* 中央の数字を大きく見せるため、内側に余白を持たせたオーバーフロー領域を用意 */
+      .reel-viewport {
+        position: relative;
+        width: 100%;
+        height: calc(var(--cell-height) * var(--visible-cells));
+        top: calc(var(--cell-height) * -1); /* 中央セルを可視領域の中央に */
+        overflow: hidden;
+      }
+
+      .reel-list {
+        /* リールの要素一覧 */
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .cell {
+        width: 100%;
+        height: var(--cell-height);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      /* フェードエフェクトで上下をぼかす */
+      .reel:before,
+      .reel:after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: calc(var(--cell-height) * 0.4);
+        pointer-events: none;
+        z-index: 2;
+      }
+      .reel:before {
+        top: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(17, 17, 17, 0.9) 0%,
+          transparent 100%
+        );
+      }
+      .reel:after {
+        bottom: 0;
+        background: linear-gradient(
+          to top,
+          rgba(17, 17, 17, 0.9) 0%,
+          transparent 100%
+        );
+      }
+
+      /* 中央フレームの強調 */
+      .center-frame {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: calc(100% - 8px);
+        height: calc(var(--cell-height) - 8px);
+        transform: translate(-50%, -50%);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        pointer-events: none;
+        z-index: 3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <!-- プレイヤー1 -->
+      <div class="game-unit">
+        <div class="canvas-container">
+          <canvas id="canvas1"></canvas>
         </div>
 
-        <div id="canvas-container">
-            <canvas id="canvas"></canvas>
+        <div class="right-panel" id="right-panel1">
+          <div class="state" id="state1">Uninitialized</div>
+
+          <div class="slot-wrap" id="slot">
+            <!-- 3つのリールを用意 -->
+            <div class="reel" data-index="0">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+
+            <div class="reel" data-index="1">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+
+            <div class="reel" data-index="2">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- プレイヤー2 -->
+      <div class="game-unit">
+        <div class="canvas-container">
+          <canvas id="canvas2"></canvas>
         </div>
 
-        <div class="controls">
-            <button onclick="dropBall()">球を落とす</button>
-            <button onclick="resetSimulation()">リセット</button>
+        <div class="right-panel" id="right-panel2">
+          <div class="state" id="state2">Uninitialized</div>
+
+          <div class="slot-wrap" id="slot2">
+            <!-- 3つのリールを用意 -->
+            <div class="reel" data-index="0">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+
+            <div class="reel" data-index="1">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+
+            <div class="reel" data-index="2">
+              <div class="reel-viewport">
+                <div class="reel-list"></div>
+              </div>
+              <div class="center-frame"></div>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="info">
-            F12キーを押してコンソールを開き、球が底部を通過する様子を確認してください。
-        </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
-        <script>
-            // Matter.jsの主要モジュールを取得
-            const {
-                Engine,
-                Render,
-                Runner,
-                Bodies,
-                Composite,
-                Events,
-                Mouse,
-                MouseConstraint,
-            } = Matter;
+    <script type="module">
+      const REPEAT = 16; // 数字列を何回繰り返すか
+      const numbers = [...Array(10).keys()].reverse(); // [9,8,7,6,5,4,3,2,1,0]
+      const reels1 = Array.from(document.querySelectorAll("#slot .reel"));
+      const reels2 = Array.from(document.querySelectorAll("#slot2 .reel"));
+      const cellH =
+        parseInt(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--cell-height",
+          ),
+        ) || 64;
 
-            // エンジンを作成
-            const engine = Engine.create();
-            const world = engine.world;
+      // タスクキューシステム
+      class OutputTaskQueue {
+        constructor(playerId, updateStateFunction) {
+          this.playerId = playerId;
+          this.queue = [];
+          this.isProcessing = false;
+          this.updateState = updateStateFunction;
+        }
 
-            // レンダラーを作成
-            const canvas = document.getElementById("canvas");
-            const render = Render.create({
-                canvas: canvas,
-                engine: engine,
-                options: {
-                    width: 800,
-                    height: 600,
-                    wireframes: false,
-                    background: "transparent",
-                    showAngleIndicator: true,
-                    showVelocity: false,
-                },
-            });
+        // タスクをキューに追加
+        addTask(taskType, taskData) {
+          console.log(
+            `Player ${this.playerId} task queued: ${taskType}`,
+            taskData,
+          );
+          this.queue.push({
+            type: taskType,
+            data: taskData,
+            timestamp: Date.now(),
+          });
+          this.processNext();
+        }
 
-            // 重力を設定
-            engine.world.gravity.y = 3.0;
+        // 次のタスクを処理
+        async processNext() {
+          if (this.isProcessing || this.queue.length === 0) {
+            return;
+          }
 
-            // 壁を作成
-            const walls = [
-                // 左の壁
-                Bodies.rectangle(0, 300, 50, 600, {
-                    isStatic: true,
-                    render: { fillStyle: "#444" },
-                }),
-                // 右の壁
-                Bodies.rectangle(800, 300, 50, 600, {
-                    isStatic: true,
-                    render: { fillStyle: "#444" },
-                }),
-            ];
+          this.isProcessing = true;
+          const task = this.queue.shift();
+          console.log(`Player ${this.playerId} processing task: ${task.type}`);
 
-            // 釘を完全にランダムに生成
-            const nails = [];
-            const nailRadius = 4; // 釘を上から見た時くらいの小さいサイズ
-            const nailCount = 80; // 釘の数
+          try {
+            await this.executeTask(task);
+          } catch (error) {
+            console.error(`Player ${this.playerId} task error:`, error);
+          }
 
-            for (let i = 0; i < nailCount; i++) {
-                // 完全にランダムな位置を生成
-                const x = 80 + Math.random() * 640; // 左右の壁から80px離れた範囲
-                const y = 120 + Math.random() * 380; // 上部と底部エリアを避けた範囲
+          this.isProcessing = false;
 
-                const nail = Bodies.circle(x, y, nailRadius, {
-                    isStatic: true,
-                    render: {
-                        fillStyle: "#e74c3c",
-                        strokeStyle: "#c0392b",
-                        lineWidth: 1,
-                    },
-                });
-                nails.push(nail);
-            }
+          // 次のタスクがあれば続行
+          if (this.queue.length > 0) {
+            setTimeout(() => this.processNext(), 100);
+          }
+        }
 
-            // 底部の「あたり」エリアを作成（視認性の良い緑色）
-            const winZone = Bodies.rectangle(400, 570, 200, 40, {
-                isSensor: true,
-                isStatic: true,
-                render: {
-                    fillStyle: "#2ecc71", // 明るい緑色
-                    strokeStyle: "#27ae60", // 濃い緑の縁
-                    lineWidth: 3,
-                    opacity: 0.8,
-                },
-            });
+        // タスクを実行
+        async executeTask(task) {
+          const { type, data } = task;
 
-            // 底部の通常エリア（あたりでない場所）
-            const normalZone = Bodies.rectangle(400, 570, 600, 40, {
-                isSensor: true,
-                isStatic: true,
-                render: {
-                    fillStyle: "#e74c3c", // 赤色
-                    strokeStyle: "#c0392b", // 濃い赤の縁
-                    lineWidth: 2,
-                    opacity: 0.5,
-                },
-            });
+          switch (type) {
+            case "default":
+              this.executeDefaultTask(data);
+              break;
+            case "finishGame":
+              this.executeFinishGameTask(data);
+              break;
+            case "lotteryNormal":
+            case "lotteryRush":
+            case "lotteryRushContinue":
+              await this.executeLotteryTask(data);
+              break;
+            default:
+              console.warn(`Unknown task type: ${type}`);
+          }
+        }
 
-            // 落下する大きな球を格納する配列
-            let fallingBalls = [];
+        // defaultタスクの実行
+        executeDefaultTask(transition) {
+          console.log(`P${this.playerId} Transition:`, transition);
+          if (transition.after) {
+            this.updateState(this.playerId, transition.after);
+          }
+        }
 
-            // 球を落とす関数
-            function dropBall() {
-                const bigBall = Bodies.circle(
-                    200 + Math.random() * 400, // ランダムなX位置
-                    50, // 上部から落下
-                    12, // 半径（元の半分のサイズ）
-                    {
-                        render: {
-                            fillStyle: "#3498db",
-                            strokeStyle: "#2980b9",
-                            lineWidth: 3,
-                        },
-                        restitution: 0.6, // 弾性
-                        friction: 0.3,
-                    },
+        // finishGameタスクの実行
+        executeFinishGameTask(gameState) {
+          console.log(`P${this.playerId} Game Finished:`, gameState);
+          this.updateState(this.playerId, gameState);
+        }
+
+        // 抽選タスクの実行（スロットアニメーション完了を待つ）
+        async executeLotteryTask(data) {
+          const { lotteryResult, slotResult, taskType } = data;
+          console.log(
+            `P${this.playerId} ${taskType}:`,
+            lotteryResult,
+            slotResult,
+          );
+
+          const slot = slotResult[1] || slotResult[0];
+
+          // スロットアニメーションを開始
+          if (this.playerId === 1) {
+            spinTo1(slot);
+          } else {
+            spinTo2(slot);
+          }
+
+          // スロットアニメーション完了を待つ
+          await this.waitForSlotAnimation();
+
+          console.log(
+            `Player ${this.playerId} slot animation completed, task finished`,
+          );
+        }
+
+        // スロットアニメーション完了を待つ
+        waitForSlotAnimation() {
+          return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+              const status = getSlotStatus(this.playerId);
+              if (!status.isSpinning && status.queueLength === 0) {
+                clearInterval(checkInterval);
+                // 少し余裕を持って完了を待つ
+                setTimeout(resolve, 300);
+              }
+            }, 100);
+
+            // 最大10秒でタイムアウト
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              console.warn(`Player ${this.playerId} slot animation timeout`);
+              resolve();
+            }, 10000);
+          });
+        }
+
+        // キューの状態を取得
+        getStatus() {
+          return {
+            queueLength: this.queue.length,
+            isProcessing: this.isProcessing,
+            queue: [...this.queue],
+          };
+        }
+
+        // キューをクリア
+        clear() {
+          this.queue = [];
+          this.isProcessing = false;
+          console.log(`Player ${this.playerId} task queue cleared`);
+        }
+      }
+
+      // プレイヤー別のタスクキュー（updateState関数はmain関数内で定義されるため、後で設定）
+      let taskQueue1;
+      let taskQueue2;
+
+      // 排他制御用の変数（スロットレベル）
+      let isSpinning1 = false;
+      let isSpinning2 = false;
+      let spinQueue1 = [];
+      let spinQueue2 = [];
+
+      // スロット状態チェック関数
+      function getSlotStatus(playerId) {
+        if (playerId === 1) {
+          return {
+            isSpinning: isSpinning1,
+            queueLength: spinQueue1.length,
+            queue: [...spinQueue1],
+          };
+        } else if (playerId === 2) {
+          return {
+            isSpinning: isSpinning2,
+            queueLength: spinQueue2.length,
+            queue: [...spinQueue2],
+          };
+        }
+        return null;
+      }
+
+      // 強制的にスロット状態をリセットする関数（デバッグ用）
+      function forceResetSlotState(playerId) {
+        if (playerId === 1) {
+          isSpinning1 = false;
+          spinQueue1 = [];
+          if (taskQueue1) {
+            taskQueue1.clear();
+          }
+          console.log(
+            "プレイヤー1: スロット状態とタスクキューを強制リセットしました",
+          );
+        } else if (playerId === 2) {
+          isSpinning2 = false;
+          spinQueue2 = [];
+          if (taskQueue2) {
+            taskQueue2.clear();
+          }
+          console.log(
+            "プレイヤー2: スロット状態とタスクキューを強制リセットしました",
+          );
+        } else if (playerId === "both") {
+          isSpinning1 = false;
+          isSpinning2 = false;
+          spinQueue1 = [];
+          spinQueue2 = [];
+          if (taskQueue1) {
+            taskQueue1.clear();
+          }
+          if (taskQueue2) {
+            taskQueue2.clear();
+          }
+          console.log(
+            "両プレイヤー: スロット状態とタスクキューを強制リセットしました",
+          );
+        }
+      }
+
+      // 初期化: 各リールに繰り返し数字リストを作成
+      function buildReelList(reelEl) {
+        const list = reelEl.querySelector(".reel-list");
+        list.innerHTML = "";
+
+        // REPEAT回分の数字を作成
+        for (let r = 0; r < REPEAT; r++) {
+          for (const n of numbers) {
+            const div = document.createElement("div");
+            div.className = "cell";
+            div.textContent = n;
+            list.appendChild(div);
+          }
+        }
+
+        // さらに1周分追加してスクロール端での空白を防ぐ
+        for (const n of numbers) {
+          const div = document.createElement("div");
+          div.className = "cell";
+          div.textContent = n;
+          list.appendChild(div);
+        }
+
+        // 初期位置: 中央ブロックの最初（0）が見えるように設定（表示位置を2つ下に調整）
+        const centerBlockStart = Math.floor(REPEAT / 2) * numbers.length;
+        list.style.transform = `translateY(-${(centerBlockStart - 2) * cellH}px)`;
+      }
+
+      reels1.forEach(buildReelList);
+      reels2.forEach(buildReelList);
+
+      // 指定された3つの数字を即座に表示
+      function setDigits(digits, reelArray = reels1) {
+        digits = normalizeDigits(digits);
+        reelArray.forEach((reelEl, idx) => {
+          const list = reelEl.querySelector(".reel-list");
+          const targetNumber = digits[idx] % 10;
+
+          // 中央ブロックでの目標位置を計算（表示位置を2つ下に調整）
+          const centerBlockStart = Math.floor(REPEAT / 2) * numbers.length;
+          const targetPositionInBlock = numbers.indexOf(targetNumber);
+          const finalPosition = centerBlockStart + targetPositionInBlock - 2;
+          const offset = finalPosition * cellH;
+
+          // トランジションなしで即座に移動
+          list.style.transition = "none";
+          list.style.transform = `translateY(-${offset}px)`;
+
+          // 次回のアニメーション用にトランジションを復活
+          requestAnimationFrame(() => {
+            list.style.transition = "transform 600ms cubic-bezier(.2,.8,.2,1)";
+          });
+        });
+      }
+
+      // スロット風回転: 必ず上から下へ回転して目標数字で停止
+      function spinTo(digits, reelArray = reels1) {
+        // 排他制御: どちらのリールセットかを判定
+        const isReel1 = reelArray === reels1;
+        const isSpinning = isReel1 ? isSpinning1 : isSpinning2;
+        const spinQueue = isReel1 ? spinQueue1 : spinQueue2;
+
+        // 現在スピン中の場合はキューに追加して終了
+        if (isSpinning) {
+          console.log(
+            `Player ${isReel1 ? 1 : 2} slot is spinning, adding to queue:`,
+            digits,
+          );
+          spinQueue.push(digits);
+          return;
+        }
+
+        // スピン開始フラグをセット
+        if (isReel1) {
+          isSpinning1 = true;
+        } else {
+          isSpinning2 = true;
+        }
+
+        console.log(`Player ${isReel1 ? 1 : 2} slot spin started:`, digits);
+
+        digits = normalizeDigits(digits);
+        const spinTimeouts = [];
+        let completedReelsCount = 0; // 完了したリール数をカウント
+        let isSpinCompleted = false; // スピン完了フラグ（重複処理防止）
+
+        reelArray.forEach((reelEl, idx) => {
+          const list = reelEl.querySelector(".reel-list");
+
+          // 回転時間（後のリールほど長く、ばらつきを減らして自然に）
+          const baseDuration = 1800 + Math.random() * 600;
+          const extra = idx * 400 + Math.random() * 200;
+          const duration = baseDuration + extra;
+
+          const targetNumber = digits[idx] % 10;
+
+          // 現在位置を取得
+          const currentTransform = parseTransformY(list);
+          const currentPosition = currentTransform / cellH;
+
+          // 最低3周以上回転（スロット風）
+          const minSpins = 3 + Math.floor(Math.random() * 2);
+          const totalRotationCells = minSpins * numbers.length;
+
+          const targetPositionInBlock = numbers.indexOf(targetNumber);
+
+          // 目標位置を中央ブロック基準で直接計算
+          const centerBlockStart = Math.floor(REPEAT / 2) * numbers.length;
+          const baseTargetPosition =
+            centerBlockStart + targetPositionInBlock - 2;
+
+          // 現在位置から最低回転数を保証した目標位置を計算
+          let targetPosition = currentPosition + totalRotationCells;
+
+          // 目標位置を中央ブロックの正しい位置に調整
+          const positionDifference =
+            (baseTargetPosition - targetPosition) % numbers.length;
+          if (positionDifference < 0) {
+            targetPosition += numbers.length + positionDifference;
+          } else {
+            targetPosition += positionDifference;
+          }
+
+          const targetOffset = targetPosition * cellH;
+
+          // より自然な減速アニメーション
+          list.style.transition = `transform ${duration}ms cubic-bezier(0.23, 1, 0.320, 1)`;
+
+          // カスケード効果で順次開始
+          setTimeout(() => {
+            list.style.transform = `translateY(-${targetOffset}px)`;
+
+            // transitionendイベントでアニメーション完了を確実に検知
+            const handleTransitionEnd = (event) => {
+              // transform プロパティのトランジション完了のみ処理
+              if (event.propertyName === "transform") {
+                list.removeEventListener("transitionend", handleTransitionEnd);
+
+                // アニメーションなしで中央ブロック内の適切な位置にリセット
+                const centerBlockStart =
+                  Math.floor(REPEAT / 2) * numbers.length;
+                const resetTargetPosition =
+                  centerBlockStart + targetPositionInBlock - 2;
+                const resetOffset = resetTargetPosition * cellH;
+
+                // トランジションを無効化してリセット
+                list.style.transition = "none";
+                list.style.transform = `translateY(-${resetOffset}px)`;
+
+                // 少し遅れてトランジションを復活
+                setTimeout(() => {
+                  list.style.transition =
+                    "transform 400ms cubic-bezier(.2,.8,.2,1)";
+                }, 10);
+
+                // 完了したリール数をインクリメント
+                completedReelsCount++;
+                console.log(
+                  `Player ${isReel1 ? 1 : 2} reel ${idx} completed (${completedReelsCount}/${reelArray.length})`,
                 );
 
-                fallingBalls.push(bigBall);
-                Composite.add(world, bigBall);
+                // 全リールが完了したかチェック（重複処理防止）
+                if (
+                  completedReelsCount === reelArray.length &&
+                  !isSpinCompleted
+                ) {
+                  isSpinCompleted = true;
+                  console.log(
+                    `Player ${isReel1 ? 1 : 2} all reels completed, waiting for settlement...`,
+                  );
 
-                console.log(`新しい球を落下開始 (ID: ${bigBall.id})`);
-            }
-
-            // 衝突検知イベント - あたりエリアのみで反応
-            Events.on(engine, "collisionStart", function (event) {
-                const pairs = event.pairs;
-
-                pairs.forEach((pair) => {
-                    const { bodyA, bodyB } = pair;
-
-                    // あたりエリア（緑の部分）との衝突をチェック
-                    if (bodyA === winZone || bodyB === winZone) {
-                        const ball = bodyA === winZone ? bodyB : bodyA;
-
-                        // 落下する球かどうかチェック
-                        if (fallingBalls.includes(ball)) {
-                            console.log(
-                                `🎉 あたり！球が当たりエリアを通過しました！ (Ball ID: ${ball.id}, 位置: x=${Math.round(ball.position.x)}, y=${Math.round(ball.position.y)})`,
-                            );
-
-                            // 通過した球は配列から削除（重複通知を防ぐ）
-                            const index = fallingBalls.indexOf(ball);
-                            if (index > -1) {
-                                fallingBalls.splice(index, 1);
-                            }
-                        }
+                  // 全リール完了時の処理（少し長めに待機して確実にアニメーションが完了してから）
+                  setTimeout(() => {
+                    // スピン完了フラグをリセット
+                    if (isReel1) {
+                      isSpinning1 = false;
+                    } else {
+                      isSpinning2 = false;
                     }
-                });
+
+                    console.log(
+                      `Player ${isReel1 ? 1 : 2} slot spin completed and ready for next`,
+                    );
+
+                    // キューに待機中のスピンがあれば実行
+                    if (spinQueue.length > 0) {
+                      const nextDigits = spinQueue.shift();
+                      console.log(
+                        `Player ${isReel1 ? 1 : 2} executing queued spin:`,
+                        nextDigits,
+                      );
+                      setTimeout(() => spinTo(nextDigits, reelArray), 300);
+                    }
+                  }, 500); // アニメーションが確実に完了するまで待機
+                }
+              }
+            };
+
+            list.addEventListener("transitionend", handleTransitionEnd);
+
+            // フォールバックタイムアウト（イベントが発火しない場合の保険）
+            // 最大アニメーション時間を考慮して十分に長めに設定
+            const maxDuration =
+              baseDuration + (reelArray.length - 1) * 400 + Math.random() * 200;
+            const fallbackTimeout = setTimeout(() => {
+              if (!isSpinCompleted) {
+                console.warn(
+                  `Player ${isReel1 ? 1 : 2} reel ${idx} fallback timeout triggered`,
+                );
+                list.removeEventListener("transitionend", handleTransitionEnd);
+                handleTransitionEnd({ propertyName: "transform" });
+              }
+            }, maxDuration + 1500);
+
+            spinTimeouts.push(fallbackTimeout);
+          }, idx * 200);
+        });
+
+        // 停止用の関数を返す
+        return function stop() {
+          spinTimeouts.forEach((id) => clearTimeout(id));
+
+          // スピン状態をリセット
+          if (isReel1) {
+            isSpinning1 = false;
+          } else {
+            isSpinning2 = false;
+          }
+
+          // 各リールを即座に目標位置に移動
+          reelArray.forEach((reelEl, idx) => {
+            const list = reelEl.querySelector(".reel-list");
+            list.style.transition = "transform 300ms ease-out";
+          });
+          setDigits(digits, reelArray);
+
+          console.log(`Player ${isReel1 ? 1 : 2} slot spin stopped`);
+        };
+      }
+
+      // ユーティリティ: 数字配列の正規化
+      function normalizeDigits(d) {
+        console.log("normalizeDigits", d);
+        if (!Array.isArray(d)) throw new Error("配列で渡してください: [a,b,c]");
+        if (d.length !== 3) throw new Error("要素数は3つ必要です");
+        return d.map((x) => Number(x) || 0).map((x) => ((x % 10) + 10) % 10);
+      }
+
+      // ユーティリティ: 現在のtranslateY値を取得
+      function parseTransformY(list) {
+        const t = getComputedStyle(list).transform;
+        if (!t || t === "none") return 0;
+
+        // matrix形式
+        const matrixMatch = t.match(
+          /matrix\(([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^\)]+)\)/,
+        );
+        if (matrixMatch) {
+          return Math.abs(parseFloat(matrixMatch[6]));
+        }
+
+        // translateY形式
+        const translateMatch = t.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+        if (translateMatch) {
+          return Math.abs(parseFloat(translateMatch[1]));
+        }
+
+        // translate3d形式
+        const translate3dMatch = t.match(
+          /translate3d\(([^,]+),\s*(-?\d+(?:\.\d+)?)px,\s*([^\)]+)\)/,
+        );
+        if (translate3dMatch) {
+          return Math.abs(parseFloat(translate3dMatch[2]));
+        }
+
+        return 0;
+      }
+
+      // プレイヤー1用のエイリアス関数
+      function setDigits1(digits) {
+        console.log("Player 1 setDigits called:", digits);
+        return setDigits(digits, reels1);
+      }
+
+      function spinTo1(digits) {
+        console.log("Player 1 spinTo called:", digits);
+        return spinTo(digits, reels1);
+      }
+
+      // プレイヤー2用のエイリアス関数
+      function setDigits2(digits) {
+        console.log("Player 2 setDigits called:", digits);
+        return setDigits(digits, reels2);
+      }
+
+      function spinTo2(digits) {
+        console.log("Player 2 spinTo called:", digits);
+        return spinTo(digits, reels2);
+      }
+
+      // 両プレイヤー同時操作用のエイリアス関数
+      function setDigitsBoth(digits) {
+        console.log("Both players setDigits called:", digits);
+        setDigits1(digits);
+        setDigits2(digits);
+      }
+
+      function spinToBoth(digits) {
+        console.log("Both players spinTo called:", digits);
+        spinTo1(digits);
+        spinTo2(digits);
+      }
+
+      // デバッグ関数をグローバルスコープに公開
+      window.getSlotStatus = getSlotStatus;
+      window.forceResetSlotState = forceResetSlotState;
+      window.debugSlots = () => {
+        console.log("=== スロット状態 ===");
+        console.log("プレイヤー1:", getSlotStatus(1));
+        console.log("プレイヤー2:", getSlotStatus(2));
+      };
+      window.getTaskQueueStatus = (playerId) => {
+        if (playerId === 1) return taskQueue1 ? taskQueue1.getStatus() : null;
+        if (playerId === 2) return taskQueue2 ? taskQueue2.getStatus() : null;
+        return {
+          player1: taskQueue1 ? taskQueue1.getStatus() : null,
+          player2: taskQueue2 ? taskQueue2.getStatus() : null,
+        };
+      };
+      window.debugTaskQueues = () => {
+        console.log("=== タスクキュー状態 ===");
+        console.log(
+          "プレイヤー1:",
+          taskQueue1 ? taskQueue1.getStatus() : "未初期化",
+        );
+        console.log(
+          "プレイヤー2:",
+          taskQueue2 ? taskQueue2.getStatus() : "未初期化",
+        );
+      };
+
+      // テスト用のデバッグ関数
+      window.testSlotTiming = (playerId = 1, count = 3, interval = 500) => {
+        console.log(`=== プレイヤー${playerId}のスロット連続テスト開始 ===`);
+        const spinFunc = playerId === 1 ? spinTo1 : spinTo2;
+
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            const digits = [
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+            ];
+            console.log(`テスト ${i + 1}/${count}:`, digits);
+            spinFunc(digits);
+          }, i * interval);
+        }
+      };
+
+      window.testBothSlots = (count = 2, interval = 1000) => {
+        console.log("=== 両プレイヤーのスロット同時テスト開始 ===");
+
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            const digits1 = [
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+            ];
+            const digits2 = [
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 10),
+            ];
+            console.log(`同時テスト ${i + 1}/${count}:`, {
+              player1: digits1,
+              player2: digits2,
+            });
+            spinTo1(digits1);
+            spinTo2(digits2);
+          }, i * interval);
+        }
+      };
+
+      // タスクキューのテスト関数
+      window.testTaskQueue = (playerId = 1, count = 3) => {
+        console.log(`=== プレイヤー${playerId}のタスクキューテスト開始 ===`);
+        const taskQueue = playerId === 1 ? taskQueue1 : taskQueue2;
+
+        if (!taskQueue) {
+          console.error("タスクキューが未初期化です");
+          return;
+        }
+
+        for (let i = 0; i < count; i++) {
+          const digits = [
+            Math.floor(Math.random() * 10),
+            Math.floor(Math.random() * 10),
+            Math.floor(Math.random() * 10),
+          ];
+
+          // 抽選タスクを直接キューに追加
+          taskQueue.addTask("lotteryNormal", {
+            lotteryResult: { type: "Normal", value: Math.random() * 100 },
+            slotResult: [digits, digits],
+            taskType: `Test Normal Lottery ${i + 1}`,
+          });
+
+          // 状態更新タスクも追加
+          taskQueue.addTask("default", {
+            after: {
+              type: "Normal",
+              balls: 1000 - i * 10,
+            },
+          });
+        }
+      };
+
+      window.testMixedTasks = (playerId = 1) => {
+        console.log(`=== プレイヤー${playerId}の混合タスクテスト開始 ===`);
+        const taskQueue = playerId === 1 ? taskQueue1 : taskQueue2;
+
+        if (!taskQueue) {
+          console.error("タスクキューが未初期化です");
+          return;
+        }
+
+        // 通常抽選
+        taskQueue.addTask("lotteryNormal", {
+          lotteryResult: { type: "Win" },
+          slotResult: [
+            [1, 2, 3],
+            [4, 5, 6],
+          ],
+          taskType: "Mixed Test Normal",
+        });
+
+        // 状態更新
+        taskQueue.addTask("default", {
+          after: { type: "Normal", balls: 950 },
+        });
+
+        // ラッシュ抽選
+        taskQueue.addTask("lotteryRush", {
+          lotteryResult: { type: "Rush" },
+          slotResult: [
+            [7, 7, 7],
+            [7, 7, 7],
+          ],
+          taskType: "Mixed Test Rush",
+        });
+
+        // さらに状態更新
+        taskQueue.addTask("default", {
+          after: { type: "Rush", balls: 900, rushBalls: 50, n: 1 },
+        });
+      };
+
+      // 統合デバッグ関数
+      window.debugAll = () => {
+        console.log("=== 統合デバッグ情報 ===");
+        console.log("=== スロット状態 ===");
+        console.log("プレイヤー1:", getSlotStatus(1));
+        console.log("プレイヤー2:", getSlotStatus(2));
+        console.log("=== タスクキュー状態 ===");
+        console.log(
+          "プレイヤー1:",
+          taskQueue1 ? taskQueue1.getStatus() : "未初期化",
+        );
+        console.log(
+          "プレイヤー2:",
+          taskQueue2 ? taskQueue2.getStatus() : "未初期化",
+        );
+      };
+
+      setDigitsBoth([0, 0, 0]);
+
+      import {
+        init,
+        WasmGame,
+        ControlFlow,
+        Config,
+        BallsConfig,
+        Probability,
+        SlotProbability,
+        JsInput,
+        JsOutput,
+      } from "./pachislo.js";
+
+      // Matter.jsの主要モジュールを取得
+      const {
+        Engine,
+        Render,
+        Runner,
+        Bodies,
+        Composite,
+        Events,
+        Mouse,
+        MouseConstraint,
+      } = Matter;
+
+      // パチンコゲームコンポーネントクラス
+      class PachinkoGame {
+        constructor(canvasId, playerId, keyBinding, nails, wasmGame) {
+          this.canvasId = canvasId;
+          this.playerId = playerId;
+          this.keyBinding = keyBinding;
+          this.fallingBalls = [];
+          this.nails_index = nails;
+          this.wasmgame = wasmGame;
+
+          this.init();
+        }
+
+        run_step_with_command(command) {
+          this.wasmgame.run_step_with_command(command);
+        }
+
+        init() {
+          // パチスロゲームを初期化
+          this.run_step_with_command("StartGame");
+
+          // エンジンを作成
+          this.engine = Engine.create();
+          this.world = this.engine.world;
+          this.engine.world.gravity.y = 0.8;
+
+          // レンダラーを作成
+          this.setupRenderer();
+
+          // ゲーム要素を作成
+          this.createWalls();
+          this.createNails();
+          this.createTargetZones();
+          this.setupMouseControl();
+          this.setupEventListeners();
+
+          // 世界にオブジェクトを追加
+          this.addToWorld();
+
+          // エンジンを開始
+          this.start();
+        }
+
+        setupRenderer() {
+          const canvas = document.getElementById(this.canvasId);
+          this.render = Render.create({
+            canvas: canvas,
+            engine: this.engine,
+            options: {
+              width: 200,
+              height: 800,
+              wireframes: false,
+              background: "transparent",
+              showAngleIndicator: true,
+              showVelocity: false,
+            },
+          });
+        }
+
+        createWalls() {
+          this.walls = [
+            Bodies.rectangle(0, 400, 30, 800, {
+              isStatic: true,
+              render: { fillStyle: "#444" },
+            }),
+            Bodies.rectangle(200, 400, 30, 800, {
+              isStatic: true,
+              render: { fillStyle: "#444" },
+            }),
+          ];
+        }
+
+        createNails() {
+          this.nails = [];
+
+          const nailRadius = 2;
+
+          for (let { x, y } of this.nails_index) {
+            const nail = Bodies.circle(x, y, nailRadius, {
+              isStatic: true,
+              render: {
+                fillStyle: "#e74c3c",
+                strokeStyle: "#c0392b",
+                lineWidth: 0.5,
+              },
             });
 
-            // シミュレーションをリセットする関数
-            function resetSimulation() {
-                // 全ての落下球を削除
-                fallingBalls.forEach((ball) => {
-                    Composite.remove(world, ball);
-                });
-                fallingBalls = [];
-                console.log("シミュレーションをリセットしました");
+            this.nails.push(nail);
+          }
+        }
+
+        createTargetZones() {
+          // あたりエリア（緑）
+          this.winZone = Bodies.rectangle(100, 770, 30, 30, {
+            isSensor: true,
+            isStatic: true,
+            render: {
+              fillStyle: "#2ecc71",
+              strokeStyle: "#27ae60",
+              lineWidth: 2,
+              opacity: 0.8,
+            },
+          });
+
+          // 通常エリア（赤）
+          this.normalZone = Bodies.rectangle(100, 770, 160, 30, {
+            isSensor: true,
+            isStatic: true,
+            render: {
+              fillStyle: "#e74c3c",
+              strokeStyle: "#c0392b",
+              lineWidth: 1,
+              opacity: 0.5,
+            },
+          });
+        }
+
+        setupMouseControl() {
+          const mouse = Mouse.create(this.render.canvas);
+          this.mouseConstraint = MouseConstraint.create(this.engine, {
+            mouse: mouse,
+            constraint: {
+              stiffness: 0.2,
+              render: { visible: false },
+            },
+          });
+        }
+
+        setupEventListeners() {
+          // 衝突検知イベント
+          Events.on(this.engine, "collisionStart", (event) => {
+            this.handleCollisions(event.pairs);
+          });
+        }
+
+        handleCollisions(pairs) {
+          pairs.forEach((pair) => {
+            const { bodyA, bodyB } = pair;
+
+            if (bodyA === this.winZone || bodyB === this.winZone) {
+              const ball = bodyA === this.winZone ? bodyB : bodyA;
+
+              if (this.fallingBalls.includes(ball)) {
+                console.log(
+                  `🎉 プレイヤー${this.playerId}: あたり！球が当たりエリアを通過しました！ (Ball ID: ${ball.id}, 位置: x=${Math.round(ball.position.x)}, y=${Math.round(ball.position.y)})`,
+                );
+
+                this.run_step_with_command("CauseLottery");
+
+                const index = this.fallingBalls.indexOf(ball);
+                if (index > -1) {
+                  this.fallingBalls.splice(index, 1);
+                }
+              }
             }
+          });
+        }
 
-            // マウスコントロールを追加
-            const mouse = Mouse.create(render.canvas);
-            const mouseConstraint = MouseConstraint.create(engine, {
-                mouse: mouse,
-                constraint: {
-                    stiffness: 0.2,
-                    render: {
-                        visible: false,
-                    },
-                },
-            });
+        addToWorld() {
+          Composite.add(this.world, [
+            ...this.walls,
+            ...this.nails,
+            this.normalZone,
+            this.winZone,
+            this.mouseConstraint,
+          ]);
+        }
 
-            // 世界にオブジェクトを追加
-            Composite.add(world, [
-                ...walls,
-                ...nails, // 釘を追加
-                normalZone, // 通常エリア（赤）を先に追加
-                winZone, // あたりエリア（緑）を後に追加（上に表示される）
-                mouseConstraint,
-            ]);
+        start() {
+          Render.run(this.render);
+          this.runner = Runner.create();
+          Runner.run(this.runner, this.engine);
+        }
 
-            // レンダラーとエンジンを開始
-            Render.run(render);
-            const runner = Runner.create();
-            Runner.run(runner, engine);
+        launchBall() {
+          const bigBall = Bodies.circle(50 + Math.random() * 100, 30, 6, {
+            render: {
+              fillStyle: "#3498db",
+              strokeStyle: "#2980b9",
+              lineWidth: 1.5,
+            },
+            restitution: 0.6,
+            friction: 0.3,
+          });
 
-            // 初期の球を1個落とす
-            setTimeout(() => {
-                dropBall();
-            }, 1000);
+          this.fallingBalls.push(bigBall);
+          Composite.add(this.world, bigBall);
 
-            // デバッグ情報
-            console.log("🚀 Matter.js シミュレーション開始");
-            console.log(`釘の数: ${nails.length}`);
-            console.log(
-                "「球を落とす」ボタンを押すか、マウスで球をドラッグして遊べます",
+          this.run_step_with_command("LaunchBall");
+
+          console.log(
+            `プレイヤー${this.playerId}: 新しい球を落下開始 (ID: ${bigBall.id})`,
+          );
+
+          // 5秒後にボールを自動削除
+          setTimeout(() => {
+            // ボールが配列に存在するかチェック
+            const ballIndex = this.fallingBalls.findIndex(
+              (ball) => ball.id === bigBall.id,
             );
-            console.log("緑のエリアに球が入ると「あたり」が出力されます！");
-        </script>
-    </body>
+            if (ballIndex !== -1) {
+              // 配列から削除
+              this.fallingBalls.splice(ballIndex, 1);
+              // 物理世界から削除
+              Composite.remove(this.world, bigBall);
+              console.log(
+                `プレイヤー${this.playerId}: 球を自動削除 (ID: ${bigBall.id})`,
+              );
+            }
+          }, 7000);
+        }
+
+        resetSimulation() {
+          this.fallingBalls.forEach((ball) => {
+            Composite.remove(this.world, ball);
+          });
+          this.fallingBalls = [];
+
+          this.run_step_with_command("FinishGame");
+
+          // スロット状態とタスクキューもリセット
+          if (this.playerId === 1) {
+            isSpinning1 = false;
+            spinQueue1 = [];
+            if (taskQueue1) {
+              taskQueue1.clear();
+            }
+            console.log(
+              "プレイヤー1: スロット状態とタスクキューをリセットしました",
+            );
+          } else if (this.playerId === 2) {
+            isSpinning2 = false;
+            spinQueue2 = [];
+            if (taskQueue2) {
+              taskQueue2.clear();
+            }
+            console.log(
+              "プレイヤー2: スロット状態とタスクキューをリセットしました",
+            );
+          }
+
+          console.log(
+            `プレイヤー${this.playerId}: シミュレーションをリセットしました`,
+          );
+        }
+
+        // キー入力処理
+        handleKeyInput(key) {
+          if (key === this.keyBinding) {
+            this.launchBall();
+            console.log(
+              `プレイヤー${this.playerId}: ${this.keyBinding.toUpperCase()}キーで球を落下`,
+            );
+          }
+        }
+      }
+
+      async function main() {
+        await init();
+
+        let nails1 = [];
+        let nails2 = [];
+
+        const nails_count = 100;
+
+        for (let i = 0; i < nails_count; i++) {
+          {
+            const x = 20 + Math.random() * 160;
+            const y = 100 + Math.random() * 600;
+            nails1.push({ x: x, y: y });
+          }
+
+          {
+            const x = 20 + Math.random() * 160;
+            const y = 100 + Math.random() * 600;
+            nails2.push({ x: x, y: y });
+          }
+        }
+
+        // スロット番号を更新する関数
+        function updateSlots(playerId, slot) {
+          if (playerId === 1) {
+            spinTo(slot, reels1);
+          } else if (playerId === 2) {
+            spinTo(slot, reels2);
+          }
+        }
+
+        // ゲーム状態を更新する関数
+        function updateState(playerId, state) {
+          console.log(`Player ${playerId} State Updated:`, state);
+
+          const element = document.getElementById(`state${playerId}`);
+
+          const rightPanel = document.getElementById(`right-panel${playerId}`);
+          if (element && rightPanel) {
+            switch (state.type) {
+              case "Normal":
+                element.textContent = `通常モード - 球数: ${state.balls}`;
+                // rightPanel.style.backgroundColor = "black";
+                break;
+              case "Rush":
+                element.textContent = `ラッシュモード - 球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}`;
+                // rightPanel.style.backgroundColor = "white";
+                break;
+              default:
+                element.textContent = "未初期化";
+            }
+          }
+        }
+
+        // タスクキューを初期化（updateState関数が定義された後）
+        taskQueue1 = new OutputTaskQueue(1, updateState);
+        taskQueue2 = new OutputTaskQueue(2, updateState);
+
+        const input1 = new JsInput();
+
+        const input2 = new JsInput();
+
+        const outputFunctions1 = {
+          default: (transition) => {
+            taskQueue1.addTask("default", transition);
+          },
+          finishGame: (gameState) => {
+            taskQueue1.addTask("finishGame", gameState);
+          },
+          lotteryNormal: (lotteryResult, slotResult) => {
+            taskQueue1.addTask("lotteryNormal", {
+              lotteryResult,
+              slotResult,
+              taskType: "Normal Lottery",
+            });
+          },
+          lotteryRush: (lotteryResult, slotResult) => {
+            taskQueue1.addTask("lotteryRush", {
+              lotteryResult,
+              slotResult,
+              taskType: "Rush Lottery",
+            });
+          },
+          lotteryRushContinue: (lotteryResult, slotResult) => {
+            taskQueue1.addTask("lotteryRushContinue", {
+              lotteryResult,
+              slotResult,
+              taskType: "Rush Continue",
+            });
+          },
+        };
+
+        const outputFunctions2 = {
+          default: (transition) => {
+            taskQueue2.addTask("default", transition);
+          },
+          finishGame: (gameState) => {
+            taskQueue2.addTask("finishGame", gameState);
+          },
+          lotteryNormal: (lotteryResult, slotResult) => {
+            taskQueue2.addTask("lotteryNormal", {
+              lotteryResult,
+              slotResult,
+              taskType: "Normal Lottery",
+            });
+          },
+          lotteryRush: (lotteryResult, slotResult) => {
+            taskQueue2.addTask("lotteryRush", {
+              lotteryResult,
+              slotResult,
+              taskType: "Rush Lottery",
+            });
+          },
+          lotteryRushContinue: (lotteryResult, slotResult) => {
+            taskQueue2.addTask("lotteryRushContinue", {
+              lotteryResult,
+              slotResult,
+              taskType: "Rush Continue",
+            });
+          },
+        };
+
+        const output1 = new JsOutput(
+          outputFunctions1.default,
+          outputFunctions1.finishGame,
+          outputFunctions1.lotteryNormal,
+          outputFunctions1.lotteryRush,
+          outputFunctions1.lotteryRushContinue,
+        );
+
+        const output2 = new JsOutput(
+          outputFunctions2.default,
+          outputFunctions2.finishGame,
+          outputFunctions2.lotteryNormal,
+          outputFunctions2.lotteryRush,
+          outputFunctions2.lotteryRushContinue,
+        );
+
+        const config1 = new Config(
+          new BallsConfig(100, 15, 30),
+          new Probability(
+            new SlotProbability(0.16, 0.3, 0.15),
+            new SlotProbability(0.48, 0.2, 0.05),
+            new SlotProbability(0.5, 0.25, 0.1),
+            (n) => {
+              return 0.3 ** (n - 1);
+            },
+          ),
+        );
+
+        const config2 = new Config(
+          new BallsConfig(1000, 15, 300),
+          new Probability(
+            new SlotProbability(0.16, 0.3, 0.15),
+            new SlotProbability(0.48, 0.2, 0.05),
+            new SlotProbability(0.8, 0.25, 0.1),
+            (n) => {
+              return 0.6 ** (n - 1);
+            },
+          ),
+        );
+
+        // 2つのゲームインスタンスを作成
+        const game1 = new PachinkoGame(
+          "canvas1",
+          1,
+          "a",
+          nails1,
+          new WasmGame(input1, output1, config1),
+        );
+        const game2 = new PachinkoGame(
+          "canvas2",
+          2,
+          "l",
+          nails2,
+          new WasmGame(input2, output2, config2),
+        );
+
+        // ボタンから呼び出される関数
+        function launchBall1() {
+          game1.launchBall();
+        }
+        function resetSimulation1() {
+          game1.resetSimulation();
+        }
+        function dropBall2() {
+          game2.launchBall();
+        }
+        function resetSimulation2() {
+          game2.resetSimulation();
+        }
+
+        // ゲームを開始
+
+        // game1.run();
+        // game2.run();
+
+        // キーボードイベントリスナー（長押し対応）
+        const pressedKeys = new Set();
+        const keyIntervals = new Map(); // キーごとのインターバルIDを管理
+        const LONG_PRESS_INTERVAL = 700; // 0.7秒間隔
+
+        function handleKeyAction(key) {
+          if (key === game1.keyBinding) {
+            game1.handleKeyInput(game1.keyBinding);
+          }
+          if (key === game2.keyBinding) {
+            game2.handleKeyInput(game2.keyBinding);
+          }
+        }
+
+        document.addEventListener("keydown", (event) => {
+          const key = event.key.toLowerCase();
+
+          // 既に押されているキーの場合は無視（リピートイベント防止）
+          if (pressedKeys.has(key)) {
+            return;
+          }
+
+          pressedKeys.add(key);
+
+          // 最初のキー入力を即座に実行
+          handleKeyAction(key);
+
+          // 長押し用のインターバルを設定
+          if (key === game1.keyBinding || key === game2.keyBinding) {
+            const intervalId = setInterval(() => {
+              if (pressedKeys.has(key)) {
+                console.log(`Long press: ${key}`);
+                handleKeyAction(key);
+              } else {
+                clearInterval(intervalId);
+                keyIntervals.delete(key);
+              }
+            }, LONG_PRESS_INTERVAL);
+
+            keyIntervals.set(key, intervalId);
+          }
+        });
+
+        document.addEventListener("keyup", (event) => {
+          const key = event.key.toLowerCase();
+          pressedKeys.delete(key);
+
+          // インターバルをクリア
+          if (keyIntervals.has(key)) {
+            clearInterval(keyIntervals.get(key));
+            keyIntervals.delete(key);
+          }
+        });
+
+        // ウィンドウフォーカス外れ時にキー状態をリセット
+        window.addEventListener("blur", () => {
+          console.log("Window lost focus, resetting key states");
+          pressedKeys.clear();
+
+          // 全てのインターバルをクリア
+          keyIntervals.forEach((intervalId, key) => {
+            clearInterval(intervalId);
+          });
+          keyIntervals.clear();
+        });
+
+        // ページの可視性が変わった時もリセット
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            console.log("Page hidden, resetting key states");
+            pressedKeys.clear();
+
+            keyIntervals.forEach((intervalId, key) => {
+              clearInterval(intervalId);
+            });
+            keyIntervals.clear();
+          }
+        });
+
+        // デバッグ用：長押し状態確認関数
+        window.debugKeyStates = () => {
+          console.log("=== キー状態デバッグ ===");
+          console.log("押されているキー:", Array.from(pressedKeys));
+          console.log("長押しインターバル:", Array.from(keyIntervals.keys()));
+          console.log("インターバル数:", keyIntervals.size);
+        };
+
+        window.clearAllKeyStates = () => {
+          console.log("全てのキー状態を強制クリア");
+          pressedKeys.clear();
+          keyIntervals.forEach((intervalId, key) => {
+            clearInterval(intervalId);
+          });
+          keyIntervals.clear();
+        };
+
+        console.log("🎮 デュアルパチンコゲーム開始！");
+        console.log("プレイヤー1: Aキーで球を落とす (長押し対応 - 0.7秒間隔)");
+        console.log("プレイヤー2: Lキーで球を落とす (長押し対応 - 0.7秒間隔)");
+        console.log(
+          "デバッグコマンド: window.debugKeyStates(), window.clearAllKeyStates()",
+        );
+      }
+
+      main();
+    </script>
+  </body>
 </html>
