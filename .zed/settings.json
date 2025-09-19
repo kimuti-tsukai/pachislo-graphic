@@ -1,0 +1,50 @@
+{
+  "lsp": {
+    "deno": {
+      "settings": {
+        "deno": {
+          "enable": true
+        }
+      }
+    }
+  },
+  "languages": {
+    "JavaScript": {
+      "language_servers": [
+        "deno",
+        "!typescript-language-server",
+        "!vtsls",
+        "!eslint"
+      ],
+      "formatter": "language_server"
+    },
+    "TypeScript": {
+      "language_servers": [
+        "deno",
+        "!typescript-language-server",
+        "!vtsls",
+        "!eslint"
+      ],
+      "formatter": "language_server"
+    },
+    "TSX": {
+      "language_servers": [
+        "deno",
+        "!typescript-language-server",
+        "!vtsls",
+        "!eslint"
+      ],
+      "formatter": "language_server"
+    }
+  },
+  "format_on_save": "on",
+  "code_actions_on_format": {
+    "source.fixAll.deno": true,
+    "source.organizeImports.deno": true
+  },
+  "tab_size": 2,
+  "hard_tabs": false,
+  "preferred_line_length": 80,
+  "remove_trailing_whitespace_on_save": true,
+  "ensure_final_newline_on_save": true
+}
