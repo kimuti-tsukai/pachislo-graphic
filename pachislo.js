@@ -484,6 +484,7 @@ var Game = class {
   lottery;
   config;
   slotProducer;
+  isSlotSpinning;
   constructor(config, input, output) {
     this.input = input;
     this.output = output;
@@ -500,6 +501,7 @@ var Game = class {
       8,
       9
     ]);
+    this.isSlotSpinning = false;
     config.validate();
     this.lottery = new Lottery(config.probability);
     this.config = config.balls;
@@ -563,9 +565,15 @@ var Game = class {
     this.state = GameState.Uninitialized();
   }
   launchBall() {
+    if (this.isSlotSpinning) {
+      console.log("Attempted to launch ball while slot is spinning - blocking action");
+      throw new Error("Cannot launch ball while slot is spinning");
+    }
     this.state = GameState.launchBall(this.state);
   }
   causeLottery() {
+    console.log("Starting slot spin - setting isSlotSpinning to true");
+    this.setSlotSpinning(true);
     let result;
     if (GameState.isRush(this.state)) {
       result = this.lottery.lotteryRush();
@@ -604,6 +612,15 @@ var Game = class {
   getOutput() {
     return this.output;
   }
+  setSlotSpinning(spinning) {
+    const previousState = this.isSlotSpinning;
+    this.isSlotSpinning = spinning;
+    console.log(`Slot spinning state changed: ${previousState} -> ${spinning}`);
+  }
+  isSlotCurrentlySpinning() {
+    console.log(`Checking slot spinning state: ${this.isSlotSpinning}`);
+    return this.isSlotSpinning;
+  }
   // WASM compatibility alias
   run_step_with_command(command) {
     return this.runStepWithCommand(command);
@@ -640,6 +657,12 @@ var WasmGame = class {
   }
   getOutput() {
     return this.game.getOutput();
+  }
+  setSlotSpinning(spinning) {
+    this.game.setSlotSpinning(spinning);
+  }
+  isSlotCurrentlySpinning() {
+    return this.game.isSlotCurrentlySpinning();
   }
 };
 var ControlFlow = class _ControlFlow {

@@ -655,6 +655,7 @@ export class Game {
     3,
     [1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
+  private isSlotSpinning = false;
 
   constructor(
     config: Config,
@@ -741,10 +742,23 @@ export class Game {
   }
 
   launchBall(): void {
+    // ゲームが未初期化の場合、GameState.launchBallでUninitializedErrorがthrowされる
+    // スロットが回転中の場合は球を打てない
+    if (this.isSlotSpinning) {
+      console.log(
+        "Attempted to launch ball while slot is spinning - blocking action",
+      );
+      throw new Error("Cannot launch ball while slot is spinning");
+    }
+
     this.state = GameState.launchBall(this.state);
   }
 
   causeLottery(): void {
+    // スロット回転開始
+    console.log("Starting slot spin - setting isSlotSpinning to true");
+    this.setSlotSpinning(true);
+
     let result: LotteryResultType;
     if (GameState.isRush(this.state)) {
       result = this.lottery.lotteryRush();
@@ -782,6 +796,9 @@ export class Game {
         console.warn("Warn:", error.message);
       }
     }
+
+    // スロット回転終了（実際の回転終了はUI側で管理）
+    // この時点では回転中のままにしておく
   }
 
   getState(): GameStateType {
@@ -790,6 +807,17 @@ export class Game {
 
   getOutput(): UserOutput {
     return this.output;
+  }
+
+  setSlotSpinning(spinning: boolean): void {
+    const previousState = this.isSlotSpinning;
+    this.isSlotSpinning = spinning;
+    console.log(`Slot spinning state changed: ${previousState} -> ${spinning}`);
+  }
+
+  isSlotCurrentlySpinning(): boolean {
+    console.log(`Checking slot spinning state: ${this.isSlotSpinning}`);
+    return this.isSlotSpinning;
   }
 
   // WASM compatibility alias
@@ -840,6 +868,14 @@ export class WasmGame {
 
   getOutput(): UserOutput {
     return this.game.getOutput();
+  }
+
+  setSlotSpinning(spinning: boolean): void {
+    this.game.setSlotSpinning(spinning);
+  }
+
+  isSlotCurrentlySpinning(): boolean {
+    return this.game.isSlotCurrentlySpinning();
   }
 }
 
