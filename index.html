@@ -1023,6 +1023,7 @@
           this.fallingBalls = [];
           this.nails_index = nails;
           this.wasmgame = wasmGame;
+          this.lastLaunchTime = 0; // 最後のボール発射時刻を記録
 
           this.init();
         }
@@ -1189,6 +1190,9 @@
         }
 
         launchBall() {
+          // 発射時刻を更新
+          this.lastLaunchTime = Date.now();
+
           // ゲーム状態をチェック
           const gameState = this.wasmgame.getState();
           if (gameState.type === "Uninitialized") {
@@ -1524,9 +1528,35 @@
         // キーボードイベントリスナー（長押し対応）
         const pressedKeys = new Set();
         const keyIntervals = new Map(); // キーごとのインターバルIDを管理
+        const lastLaunchTimes = new Map(); // キーごとの最後の発射時刻を管理
         const LONG_PRESS_INTERVAL = 700; // 0.7秒間隔
 
-        function handleKeyAction(key) {
+        // 連打制限付きのキー処理（初回押下時用）
+        function handleKeyPress(key) {
+          const now = Date.now();
+          const lastLaunchTime = lastLaunchTimes.get(key) || 0;
+
+          // 0.7秒間隔のチェック（連打対応）
+          if (now - lastLaunchTime < LONG_PRESS_INTERVAL) {
+            console.log(
+              `キー ${key} は0.7秒間隔制限により無視されました (残り時間: ${LONG_PRESS_INTERVAL - (now - lastLaunchTime)}ms)`,
+            );
+            return;
+          }
+
+          // 発射時刻を更新
+          lastLaunchTimes.set(key, now);
+
+          executeKeyAction(key);
+        }
+
+        // 長押し時のキー処理（制限なし）
+        function handleLongPress(key) {
+          executeKeyAction(key);
+        }
+
+        // 実際のキーアクション実行
+        function executeKeyAction(key) {
           if (key === game1.keyBinding) {
             game1.handleKeyInput(game1.keyBinding);
           }
@@ -1545,15 +1575,15 @@
 
           pressedKeys.add(key);
 
-          // 最初のキー入力を即座に実行
-          handleKeyAction(key);
+          // 最初のキー入力を即座に実行（連打制限付き）
+          handleKeyPress(key);
 
           // 長押し用のインターバルを設定
           if (key === game1.keyBinding || key === game2.keyBinding) {
             const intervalId = setInterval(() => {
               if (pressedKeys.has(key)) {
                 console.log(`Long press: ${key}`);
-                handleKeyAction(key);
+                handleLongPress(key);
               } else {
                 clearInterval(intervalId);
                 keyIntervals.delete(key);
@@ -1579,6 +1609,7 @@
         window.addEventListener("blur", () => {
           console.log("Window lost focus, resetting key states");
           pressedKeys.clear();
+          lastLaunchTimes.clear();
 
           // 全てのインターバルをクリア
           keyIntervals.forEach((intervalId, key) => {
@@ -1592,6 +1623,7 @@
           if (document.hidden) {
             console.log("Page hidden, resetting key states");
             pressedKeys.clear();
+            lastLaunchTimes.clear();
 
             keyIntervals.forEach((intervalId, key) => {
               clearInterval(intervalId);
@@ -1606,11 +1638,20 @@
           console.log("押されているキー:", Array.from(pressedKeys));
           console.log("長押しインターバル:", Array.from(keyIntervals.keys()));
           console.log("インターバル数:", keyIntervals.size);
+          console.log("最後の発射時刻:", Object.fromEntries(lastLaunchTimes));
+          const now = Date.now();
+          lastLaunchTimes.forEach((time, key) => {
+            const elapsed = now - time;
+            console.log(
+              `キー ${key}: ${elapsed}ms前に発射 (次回発射まで${Math.max(0, LONG_PRESS_INTERVAL - elapsed)}ms)`,
+            );
+          });
         };
 
         window.clearAllKeyStates = () => {
           console.log("全てのキー状態を強制クリア");
           pressedKeys.clear();
+          lastLaunchTimes.clear();
           keyIntervals.forEach((intervalId, key) => {
             clearInterval(intervalId);
           });
