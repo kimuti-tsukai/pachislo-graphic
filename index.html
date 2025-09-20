@@ -553,7 +553,7 @@
       }
 
       // スロット風回転: 必ず上から下へ回転して目標数字で停止
-      function spinTo(digits, reelArray = reels1) {
+      function spinTo(digits, reelArray = reels1, spinDuration = null) {
         // 排他制御: どちらのリールセットかを判定
         const isReel1 = reelArray === reels1;
         const isSpinning = isReel1 ? isSpinning1 : isSpinning2;
@@ -565,7 +565,7 @@
             `Player ${isReel1 ? 1 : 2} slot is spinning, adding to queue:`,
             digits,
           );
-          spinQueue.push(digits);
+          spinQueue.push({ digits, spinDuration });
           return;
         }
 
@@ -586,10 +586,19 @@
         reelArray.forEach((reelEl, idx) => {
           const list = reelEl.querySelector(".reel-list");
 
-          // 回転時間（後のリールほど長く、ばらつきを減らして自然に）
-          const baseDuration = 1800 + Math.random() * 600;
-          const extra = idx * 400 + Math.random() * 200;
-          const duration = baseDuration + extra;
+          // 回転時間の計算
+          let baseDuration, duration;
+          if (spinDuration !== null) {
+            // 指定された時間を使用（リール間のずれを小さくする）
+            baseDuration = spinDuration;
+            const extra = idx * 100 + Math.random() * 100;
+            duration = baseDuration + extra;
+          } else {
+            // デフォルトの時間計算（後のリールほど長く、ばらつきを減らして自然に）
+            baseDuration = 1800 + Math.random() * 600;
+            const extra = idx * 400 + Math.random() * 200;
+            duration = baseDuration + extra;
+          }
 
           const targetNumber = digits[idx] % 10;
 
@@ -683,12 +692,20 @@
 
                     // キューに待機中のスピンがあれば実行
                     if (spinQueue.length > 0) {
-                      const nextDigits = spinQueue.shift();
+                      const nextSpin = spinQueue.shift();
                       console.log(
                         `Player ${isReel1 ? 1 : 2} executing queued spin:`,
-                        nextDigits,
+                        nextSpin.digits,
                       );
-                      setTimeout(() => spinTo(nextDigits, reelArray), 300);
+                      setTimeout(
+                        () =>
+                          spinTo(
+                            nextSpin.digits,
+                            reelArray,
+                            nextSpin.spinDuration,
+                          ),
+                        300,
+                      );
                     }
                   }, 500); // アニメーションが確実に完了するまで待機
                 }
@@ -700,7 +717,13 @@
             // フォールバックタイムアウト（イベントが発火しない場合の保険）
             // 最大アニメーション時間を考慮して十分に長めに設定
             const maxDuration =
-              baseDuration + (reelArray.length - 1) * 400 + Math.random() * 200;
+              spinDuration !== null
+                ? baseDuration +
+                  (reelArray.length - 1) * 100 +
+                  Math.random() * 100
+                : baseDuration +
+                  (reelArray.length - 1) * 400 +
+                  Math.random() * 200;
             const fallbackTimeout = setTimeout(() => {
               if (!isSpinCompleted) {
                 console.warn(
@@ -781,9 +804,9 @@
         return setDigits(digits, reels1);
       }
 
-      function spinTo1(digits) {
+      function spinTo1(digits, spinDuration = null) {
         console.log("Player 1 spinTo called:", digits);
-        return spinTo(digits, reels1);
+        return spinTo(digits, reels1, spinDuration);
       }
 
       // プレイヤー2用のエイリアス関数
@@ -792,9 +815,9 @@
         return setDigits(digits, reels2);
       }
 
-      function spinTo2(digits) {
+      function spinTo2(digits, spinDuration = null) {
         console.log("Player 2 spinTo called:", digits);
-        return spinTo(digits, reels2);
+        return spinTo(digits, reels2, spinDuration);
       }
 
       // 両プレイヤー同時操作用のエイリアス関数
@@ -804,10 +827,9 @@
         setDigits2(digits);
       }
 
-      function spinToBoth(digits) {
-        console.log("Both players spinTo called:", digits);
-        spinTo1(digits);
-        spinTo2(digits);
+      function spinToBoth(digits, spinDuration = null) {
+        spinTo1(digits, spinDuration);
+        spinTo2(digits, spinDuration);
       }
 
       // デバッグ関数をグローバルスコープに公開
