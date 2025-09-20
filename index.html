@@ -365,6 +365,24 @@
               const status = getSlotStatus(this.playerId);
               if (!status.isSpinning && status.queueLength === 0) {
                 clearInterval(checkInterval);
+
+                // ゲーム側のスロット回転状態をリセット
+                if (this.playerId === 1 && window.game1) {
+                  window.game1.setSlotSpinning(false);
+                  console.log(
+                    `Player ${this.playerId} slot spinning state reset`,
+                  );
+                  // 状態表示を更新
+                  this.updateState(this.playerId, window.game1.getState());
+                } else if (this.playerId === 2 && window.game2) {
+                  window.game2.setSlotSpinning(false);
+                  console.log(
+                    `Player ${this.playerId} slot spinning state reset`,
+                  );
+                  // 状態表示を更新
+                  this.updateState(this.playerId, window.game2.getState());
+                }
+
                 // 少し余裕を持って完了を待つ
                 setTimeout(resolve, 300);
               }
@@ -374,6 +392,24 @@
             setTimeout(() => {
               clearInterval(checkInterval);
               console.warn(`Player ${this.playerId} slot animation timeout`);
+
+              // タイムアウト時もスロット回転状態をリセット
+              if (this.playerId === 1 && window.game1) {
+                window.game1.setSlotSpinning(false);
+                console.log(
+                  `Player ${this.playerId} slot spinning state reset (timeout)`,
+                );
+                // 状態表示を更新
+                this.updateState(this.playerId, window.game1.getState());
+              } else if (this.playerId === 2 && window.game2) {
+                window.game2.setSlotSpinning(false);
+                console.log(
+                  `Player ${this.playerId} slot spinning state reset (timeout)`,
+                );
+                // 状態表示を更新
+                this.updateState(this.playerId, window.game2.getState());
+              }
+
               resolve();
             }, 10000);
           });
@@ -802,6 +838,22 @@
         );
       };
 
+      window.debugSpinningState = () => {
+        console.log("=== スロット回転状態 ===");
+        console.log("UI側スロット状態:");
+        console.log("  プレイヤー1:", getSlotStatus(1));
+        console.log("  プレイヤー2:", getSlotStatus(2));
+        console.log("ゲーム側スロット状態:");
+        console.log(
+          "  プレイヤー1:",
+          window.game1 ? window.game1.isSlotCurrentlySpinning() : "未初期化",
+        );
+        console.log(
+          "  プレイヤー2:",
+          window.game2 ? window.game2.isSlotCurrentlySpinning() : "未初期化",
+        );
+      };
+
       // テスト用のデバッグ関数
       window.testSlotTiming = (playerId = 1, count = 3, interval = 500) => {
         console.log(`=== プレイヤー${playerId}のスロット連続テスト開始 ===`);
@@ -1137,39 +1189,81 @@
         }
 
         launchBall() {
-          const bigBall = Bodies.circle(50 + Math.random() * 100, 30, 6, {
-            render: {
-              fillStyle: "#3498db",
-              strokeStyle: "#2980b9",
-              lineWidth: 1.5,
-            },
-            restitution: 0.6,
-            friction: 0.3,
-          });
+          // ゲーム状態をチェック
+          const gameState = this.wasmgame.getState();
+          if (gameState.type === "Uninitialized") {
+            console.log(
+              `プレイヤー${this.playerId}: ゲームが未初期化のため球を打てません - StartGameコマンドでゲームを開始してください`,
+            );
+            console.log(
+              `プレイヤー${this.playerId}: 現在のゲーム状態:`,
+              gameState,
+            );
+            return;
+          }
 
-          this.fallingBalls.push(bigBall);
-          Composite.add(this.world, bigBall);
+          // スロット回転状態をチェック
+          if (this.wasmgame.isSlotCurrentlySpinning()) {
+            console.log(
+              `プレイヤー${this.playerId}: ゲーム側でスロット回転中のため球を打てません - 回転終了まで待機`,
+            );
+            return;
+          }
 
-          this.run_step_with_command("LaunchBall");
+          // スロットが実際に回転中かもチェック
+          const slotStatus = getSlotStatus(this.playerId);
+          if (slotStatus && slotStatus.isSpinning) {
+            console.log(
+              `プレイヤー${this.playerId}: UI側でスロット回転中のため球を打てません - キュー長: ${slotStatus.queueLength}`,
+            );
+            return;
+          }
 
-          console.log(
-            `プレイヤー${this.playerId}: 新しい球を落下開始 (ID: ${bigBall.id})`,
-          );
+          let bigBall = null;
+
+          try {
+            bigBall = Bodies.circle(50 + Math.random() * 100, 30, 6, {
+              render: {
+                fillStyle: "#3498db",
+                strokeStyle: "#2980b9",
+                lineWidth: 1.5,
+              },
+              restitution: 0.6,
+              friction: 0.3,
+            });
+
+            this.fallingBalls.push(bigBall);
+            Composite.add(this.world, bigBall);
+
+            this.run_step_with_command("LaunchBall");
+
+            console.log(
+              `プレイヤー${this.playerId}: 新しい球を落下開始 (ID: ${bigBall.id})`,
+            );
+          } catch (error) {
+            console.log(
+              `プレイヤー${this.playerId}: 球の発射に失敗: ${error.message}`,
+            );
+            return;
+          }
 
           // 5秒後にボールを自動削除
           setTimeout(() => {
-            // ボールが配列に存在するかチェック
-            const ballIndex = this.fallingBalls.findIndex(
-              (ball) => ball.id === bigBall.id,
-            );
-            if (ballIndex !== -1) {
-              // 配列から削除
-              this.fallingBalls.splice(ballIndex, 1);
-              // 物理世界から削除
-              Composite.remove(this.world, bigBall);
-              console.log(
-                `プレイヤー${this.playerId}: 球を自動削除 (ID: ${bigBall.id})`,
+            // bigBallが正常に作成されていることを確認
+            if (bigBall) {
+              // ボールが配列に存在するかチェック
+              const ballIndex = this.fallingBalls.findIndex(
+                (ball) => ball.id === bigBall.id,
               );
+              if (ballIndex !== -1) {
+                // 配列から削除
+                this.fallingBalls.splice(ballIndex, 1);
+                // 物理世界から削除
+                Composite.remove(this.world, bigBall);
+                console.log(
+                  `プレイヤー${this.playerId}: 球を自動削除 (ID: ${bigBall.id})`,
+                );
+              }
             }
           }, 7000);
         }
@@ -1255,20 +1349,36 @@
           console.log(`Player ${playerId} State Updated:`, state);
 
           const element = document.getElementById(`state${playerId}`);
-
           const rightPanel = document.getElementById(`right-panel${playerId}`);
+
           if (element && rightPanel) {
+            // スロット回転状態を取得
+            const slotStatus = getSlotStatus(playerId);
+            const gameSpinningState =
+              playerId === 1
+                ? window.game1
+                  ? window.game1.isSlotCurrentlySpinning()
+                  : false
+                : window.game2
+                  ? window.game2.isSlotCurrentlySpinning()
+                  : false;
+
+            const spinStatusText =
+              (slotStatus && slotStatus.isSpinning) || gameSpinningState
+                ? " 🎰回転中"
+                : "";
+
             switch (state.type) {
               case "Normal":
-                element.textContent = `通常モード - 球数: ${state.balls}`;
+                element.textContent = `通常モード - 球数: ${state.balls}${spinStatusText}`;
                 // rightPanel.style.backgroundColor = "black";
                 break;
               case "Rush":
-                element.textContent = `ラッシュモード - 球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}`;
+                element.textContent = `ラッシュモード - 球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}${spinStatusText}`;
                 // rightPanel.style.backgroundColor = "white";
                 break;
               default:
-                element.textContent = "未初期化";
+                element.textContent = `未初期化${spinStatusText}`;
             }
           }
         }
@@ -1382,20 +1492,15 @@
         );
 
         // 2つのゲームインスタンスを作成
-        const game1 = new PachinkoGame(
-          "canvas1",
-          1,
-          "a",
-          nails1,
-          new WasmGame(input1, output1, config1),
-        );
-        const game2 = new PachinkoGame(
-          "canvas2",
-          2,
-          "l",
-          nails2,
-          new WasmGame(input2, output2, config2),
-        );
+        const wasmGame1 = new WasmGame(input1, output1, config1);
+        const wasmGame2 = new WasmGame(input2, output2, config2);
+
+        const game1 = new PachinkoGame("canvas1", 1, "a", nails1, wasmGame1);
+        const game2 = new PachinkoGame("canvas2", 2, "l", nails2, wasmGame2);
+
+        // グローバルアクセスのためwindowオブジェクトに設定（WasmGameインスタンス）
+        window.game1 = wasmGame1;
+        window.game2 = wasmGame2;
 
         // ボタンから呼び出される関数
         function launchBall1() {
