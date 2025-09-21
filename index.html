@@ -553,7 +553,12 @@
       }
 
       // スロット風回転: 必ず上から下へ回転して目標数字で停止
-      function spinTo(digits, reelArray = reels1, spinDuration = null) {
+      // spinDurations: リールごとの時間指定
+      //   - null: デフォルトのランダム時間
+      //   - 数値: 全リール共通の基本時間（後方互換）
+      //   - 配列: [reel0_duration, reel1_duration, reel2_duration] 各リール個別時間
+      //   例: spinTo1([1,2,3], [1000, 1500, 2000]) // 1桁目1秒、2桁目1.5秒、3桁目2秒
+      function spinTo(digits, reelArray = reels1, spinDurations = null) {
         // 排他制御: どちらのリールセットかを判定
         const isReel1 = reelArray === reels1;
         const isSpinning = isReel1 ? isSpinning1 : isSpinning2;
@@ -565,7 +570,7 @@
             `Player ${isReel1 ? 1 : 2} slot is spinning, adding to queue:`,
             digits,
           );
-          spinQueue.push({ digits, spinDuration });
+          spinQueue.push({ digits, spinDurations });
           return;
         }
 
@@ -588,9 +593,17 @@
 
           // 回転時間の計算
           let baseDuration, duration;
-          if (spinDuration !== null) {
-            // 指定された時間を使用（リール間のずれを小さくする）
-            baseDuration = spinDuration;
+          if (spinDurations !== null && spinDurations[idx] !== undefined) {
+            // 指定された各リールの時間を使用
+            baseDuration = spinDurations[idx];
+            const extra = Math.random() * 100; // 少しのランダム要素を残す
+            duration = baseDuration + extra;
+          } else if (
+            spinDurations !== null &&
+            typeof spinDurations === "number"
+          ) {
+            // 単一の数値が指定された場合（後方互換性）
+            baseDuration = spinDurations;
             const extra = idx * 100 + Math.random() * 100;
             duration = baseDuration + extra;
           } else {
@@ -702,7 +715,7 @@
                           spinTo(
                             nextSpin.digits,
                             reelArray,
-                            nextSpin.spinDuration,
+                            nextSpin.spinDurations,
                           ),
                         300,
                       );
@@ -717,7 +730,9 @@
             // フォールバックタイムアウト（イベントが発火しない場合の保険）
             // 最大アニメーション時間を考慮して十分に長めに設定
             const maxDuration =
-              spinDuration !== null
+              spinDurations !== null &&
+              (Array.isArray(spinDurations) ||
+                typeof spinDurations === "number")
                 ? baseDuration +
                   (reelArray.length - 1) * 100 +
                   Math.random() * 100
@@ -804,9 +819,9 @@
         return setDigits(digits, reels1);
       }
 
-      function spinTo1(digits, spinDuration = null) {
+      function spinTo1(digits, spinDurations = null) {
         console.log("Player 1 spinTo called:", digits);
-        return spinTo(digits, reels1, spinDuration);
+        return spinTo(digits, reels1, spinDurations);
       }
 
       // プレイヤー2用のエイリアス関数
@@ -815,9 +830,9 @@
         return setDigits(digits, reels2);
       }
 
-      function spinTo2(digits, spinDuration = null) {
+      function spinTo2(digits, spinDurations = null) {
         console.log("Player 2 spinTo called:", digits);
-        return spinTo(digits, reels2, spinDuration);
+        return spinTo(digits, reels2, spinDurations);
       }
 
       // 両プレイヤー同時操作用のエイリアス関数
@@ -827,9 +842,9 @@
         setDigits2(digits);
       }
 
-      function spinToBoth(digits, spinDuration = null) {
-        spinTo1(digits, spinDuration);
-        spinTo2(digits, spinDuration);
+      function spinToBoth(digits, spinDurations = null) {
+        spinTo1(digits, spinDurations);
+        spinTo2(digits, spinDurations);
       }
 
       // デバッグ関数をグローバルスコープに公開
@@ -894,9 +909,9 @@
         }
       };
 
+      // 両プレイヤー同時回転テスト
       window.testBothSlots = (count = 2, interval = 1000) => {
-        console.log("=== 両プレイヤーのスロット同時テスト開始 ===");
-
+        console.log("=== 両プレイヤー同時スロットテスト開始 ===");
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             const digits1 = [
@@ -909,7 +924,7 @@
               Math.floor(Math.random() * 10),
               Math.floor(Math.random() * 10),
             ];
-            console.log(`同時テスト ${i + 1}/${count}:`, {
+            console.log(`両プレイヤーテスト ${i + 1}/${count}:`, {
               player1: digits1,
               player2: digits2,
             });
@@ -917,6 +932,55 @@
             spinTo2(digits2);
           }, i * interval);
         }
+      };
+
+      // 各リール個別時間指定テスト
+      window.testIndividualReelTiming = (playerId = 1) => {
+        console.log(`=== プレイヤー${playerId}の各リール個別時間テスト ===`);
+        const spinFunc = playerId === 1 ? spinTo1 : spinTo2;
+
+        // テストパターン1: 左から右へ順次長く
+        setTimeout(() => {
+          const digits = [7, 7, 7];
+          const durations = [1000, 1500, 2000]; // 1秒、1.5秒、2秒
+          console.log("パターン1 - 左から右へ順次長く:", { digits, durations });
+          spinFunc(digits, durations);
+        }, 0);
+
+        // テストパターン2: 右から左へ順次長く
+        setTimeout(() => {
+          const digits = [3, 3, 3];
+          const durations = [2000, 1500, 1000]; // 2秒、1.5秒、1秒
+          console.log("パターン2 - 右から左へ順次長く:", { digits, durations });
+          spinFunc(digits, durations);
+        }, 4000);
+
+        // テストパターン3: 中央だけ長く
+        setTimeout(() => {
+          const digits = [1, 2, 3];
+          const durations = [1000, 3000, 1000]; // 1秒、3秒、1秒
+          console.log("パターン3 - 中央だけ長く:", { digits, durations });
+          spinFunc(digits, durations);
+        }, 8000);
+
+        // テストパターン4: 全リール同じ時間（配列指定）
+        setTimeout(() => {
+          const digits = [5, 5, 5];
+          const durations = [1800, 1800, 1800]; // 全て1.8秒
+          console.log("パターン4 - 全リール同じ時間（配列）:", {
+            digits,
+            durations,
+          });
+          spinFunc(digits, durations);
+        }, 12000);
+
+        // テストパターン5: 従来の数値指定（後方互換性確認）
+        setTimeout(() => {
+          const digits = [9, 8, 7];
+          const duration = 2500; // 単一数値
+          console.log("パターン5 - 従来の数値指定:", { digits, duration });
+          spinFunc(digits, duration);
+        }, 16000);
       };
 
       // タスクキューのテスト関数
