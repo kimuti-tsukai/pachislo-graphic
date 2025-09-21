@@ -27,6 +27,7 @@
         display: flex;
         gap: 20px;
         align-items: flex-start;
+        position: relative;
       }
 
       .canvas-container {
@@ -71,8 +72,9 @@
         font-family: "Courier New", monospace;
         font-size: 18px;
         font-weight: bold;
-        z-index: 10;
-        min-width: 60px;
+        z-index: 100;
+        display: inline-block;
+        width: auto;
         text-align: center;
         border: 2px solid rgba(255, 255, 255, 0.3);
       }
@@ -130,6 +132,43 @@
 
       .time-settings button:last-child:hover {
         background-color: #da190b;
+      }
+
+      /* Lottery video overlay styles for 9:16 aspect ratio */
+      .right-panel {
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+        min-width: 200px;
+      }
+
+      .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 8px;
+      }
+
+      .video-overlay video {
+        max-width: 90%;
+        max-height: 90%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 4px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      }
+
+      .right-panel > *:not(.video-overlay) {
+        position: relative;
+        z-index: 2;
       }
 
       .state {
@@ -270,7 +309,6 @@
         <div class="canvas-container">
           <canvas id="canvas1"></canvas>
         </div>
-
         <div class="right-panel" id="right-panel1">
           <div class="timer-display" id="timer-display1">5:00</div>
           <div class="time-settings" id="time-settings1">
@@ -288,7 +326,9 @@
             loop
             playsinline
             onclick="toggleTimeSettings(1)"
-          ></video>
+          >
+            <source src="" id="source1" />
+          </video>
 
           <div class="state" id="state1">Uninitialized</div>
 
@@ -323,7 +363,6 @@
         <div class="canvas-container">
           <canvas id="canvas2"></canvas>
         </div>
-
         <div class="right-panel" id="right-panel2">
           <div class="timer-display" id="timer-display2">5:00</div>
           <div class="time-settings" id="time-settings2">
@@ -468,7 +507,7 @@
           this.updateState(this.playerId, gameState);
         }
 
-        // 抽選タスクの実行（スロットアニメーション完了を待つ）
+        // 抽選タスクの実行（映像再生とスロット回転）
         async executeLotteryTask(data) {
           const { lotteryResult, slotResult, taskType } = data;
           console.log(
@@ -479,19 +518,289 @@
 
           const slot = slotResult[1] || slotResult[0];
 
-          // スロットアニメーションを開始
+          // 抽選結果に基づいて映像フォルダを決定
+          let videoFolder = "";
+          console.log(
+            `P${this.playerId} Lottery result structure:`,
+            lotteryResult,
+          );
+
+          // Handle different possible lottery result formats
+          if (lotteryResult.Win !== undefined) {
+            // Rust-style enum format: { Win: "Default" } or { Win: "FakeWin" }
+            videoFolder =
+              lotteryResult.Win === "Default" ? "images/win" : "images/fakewin";
+          } else if (lotteryResult.Lose !== undefined) {
+            // Rust-style enum format: { Lose: "Default" } or { Lose: "FakeLose" }
+            videoFolder =
+              lotteryResult.Lose === "FakeLose" ? "images/lose" : "images/lose";
+          } else if (lotteryResult.type === "Win") {
+            // JavaScript-style format: { type: "Win", winType: "Default" }
+            videoFolder =
+              lotteryResult.winType === "Default"
+                ? "images/win"
+                : "images/fakewin";
+          } else if (lotteryResult.type === "Lose") {
+            // JavaScript-style format: { type: "Lose", loseType: "Default" }
+            videoFolder =
+              lotteryResult.loseType === "FakeLose"
+                ? "images/lose"
+                : "images/lose";
+          }
+
+          console.log(
+            `P${this.playerId} Selected video folder: ${videoFolder}`,
+          );
+
+          try {
+            // フォルダから映像ファイルを取得してランダム選択
+            const videoFile = await this.selectRandomVideo(videoFolder);
+            if (!videoFile) {
+              console.warn(
+                `No video found in ${videoFolder}, using default slot animation`,
+              );
+              await this.fallbackToDefaultSlot(slot);
+              return;
+            }
+
+            console.log(`P${this.playerId} Selected video: ${videoFile}`);
+
+            try {
+              // 映像を背景で再生し、長さを取得
+              const videoDuration = await this.playBackgroundVideo(videoFile);
+              console.log(
+                `P${this.playerId} Playing ${videoFile} for ${videoDuration}ms`,
+              );
+
+              // スロットをその長さだけ回転させる
+              await this.spinSlotForDuration(slot, videoDuration);
+            } catch (videoError) {
+              console.warn(
+                `P${this.playerId} Video playback failed:`,
+                videoError.message,
+              );
+              console.log(
+                `P${this.playerId} Falling back to default slot animation`,
+              );
+              await this.fallbackToDefaultSlot(slot);
+            }
+          } catch (error) {
+            console.error(
+              `P${this.playerId} Error in lottery task execution:`,
+              error,
+            );
+            await this.fallbackToDefaultSlot(slot);
+          }
+
+          console.log(`Player ${this.playerId} lottery task completed`);
+        }
+
+        // フォルダからランダムに映像ファイルを選択（フォールバック付き）
+        async selectRandomVideo(folderPath) {
+          // Static fallback files for each folder
+          const fallbackFiles = {
+            "images/win": ["once-input-win.mov"],
+            "images/fakewin": ["once-input-fakewin.mov"],
+            "images/lose": ["once-input-lose.mov"],
+          };
+
+          try {
+            const response = await fetch("/api/list-videos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ folder: folderPath }),
+            });
+
+            if (response.ok) {
+              const videos = await response.json();
+              if (videos.length > 0) {
+                const randomIndex = Math.floor(Math.random() * videos.length);
+                return `${folderPath}/${videos[randomIndex]}`;
+              }
+            }
+
+            console.warn(`API failed for ${folderPath}, using fallback`);
+          } catch (error) {
+            console.warn(
+              `API error for ${folderPath}, using fallback:`,
+              error.message,
+            );
+          }
+
+          // Use fallback files if API fails or returns empty
+          const fallback = fallbackFiles[folderPath];
+          if (fallback && fallback.length > 0) {
+            const randomIndex = Math.floor(Math.random() * fallback.length);
+            return `${folderPath}/${fallback[randomIndex]}`;
+          }
+
+          return null;
+        }
+
+        // right-panel内で映像を再生し、長さを取得（9:16動画対応）
+        async playBackgroundVideo(videoPath) {
+          return new Promise((resolve, reject) => {
+            const video = document.createElement("video");
+            video.style.position = "absolute";
+            video.style.top = "50%";
+            video.style.left = "50%";
+            video.style.transform = "translate(-50%, -50%)";
+            video.style.maxWidth = "100%";
+            video.style.maxHeight = "100%";
+            video.style.width = "auto";
+            video.style.height = "auto";
+            video.style.objectFit = "contain";
+            video.style.zIndex = "5";
+            video.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
+            video.style.borderRadius = "8px";
+            video.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
+            video.muted = true;
+            video.autoplay = true;
+            video.playsInline = true;
+
+            // Timeout for loading
+            const loadTimeout = setTimeout(() => {
+              console.warn(`Video loading timeout: ${videoPath}`);
+              reject(new Error(`Video loading timeout: ${videoPath}`));
+            }, 10000); // 10秒タイムアウト
+
+            video.onloadedmetadata = () => {
+              clearTimeout(loadTimeout);
+              const duration = video.duration * 1000; // ミリ秒に変換
+              console.log(
+                `Video loaded successfully: ${videoPath}, duration: ${duration}ms`,
+              );
+
+              // Safely append to right-panel with proper setup
+              try {
+                const rightPanel = document.getElementById(
+                  `right-panel${this.playerId}`,
+                );
+                if (rightPanel) {
+                  // Ensure right-panel is set up for video overlay
+                  rightPanel.style.position = "relative";
+                  rightPanel.style.overflow = "hidden";
+
+                  // Create video overlay container for better control
+                  const videoOverlay = document.createElement("div");
+                  videoOverlay.className = "video-overlay";
+                  videoOverlay.style.position = "absolute";
+                  videoOverlay.style.top = "0";
+                  videoOverlay.style.left = "0";
+                  videoOverlay.style.width = "100%";
+                  videoOverlay.style.height = "100%";
+                  videoOverlay.style.zIndex = "5";
+                  videoOverlay.style.display = "flex";
+                  videoOverlay.style.alignItems = "center";
+                  videoOverlay.style.justifyContent = "center";
+                  videoOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                  videoOverlay.style.borderRadius = "8px";
+
+                  videoOverlay.appendChild(video);
+                  rightPanel.appendChild(videoOverlay);
+
+                  // Store reference for cleanup
+                  video._overlayContainer = videoOverlay;
+                } else {
+                  console.warn(
+                    `Right panel not found for player ${this.playerId}`,
+                  );
+                  reject(
+                    new Error(
+                      `Right panel not found for player ${this.playerId}`,
+                    ),
+                  );
+                  return;
+                }
+              } catch (error) {
+                console.warn(`Failed to append video to right-panel:`, error);
+                reject(error);
+                return;
+              }
+
+              // 映像終了後に削除（エラーハンドリング付き）
+              video.onended = () => {
+                try {
+                  if (
+                    video._overlayContainer &&
+                    video._overlayContainer.parentNode
+                  ) {
+                    video._overlayContainer.parentNode.removeChild(
+                      video._overlayContainer,
+                    );
+                  } else if (video.parentNode) {
+                    video.parentNode.removeChild(video);
+                  }
+                } catch (error) {
+                  console.warn(`Failed to remove video element:`, error);
+                }
+              };
+
+              // Default duration fallback if video duration is invalid
+              resolve(duration > 0 ? duration : 3000); // 最低3秒
+            };
+
+            video.onerror = (error) => {
+              clearTimeout(loadTimeout);
+              console.error(`Video error for ${videoPath}:`, error);
+              reject(new Error(`Failed to load video: ${videoPath}`));
+            };
+
+            // Set source and handle immediate errors
+            try {
+              video.src = videoPath;
+            } catch (error) {
+              clearTimeout(loadTimeout);
+              reject(new Error(`Invalid video path: ${videoPath}`));
+            }
+          });
+        }
+
+        // フォールバック：デフォルトスロットアニメーション
+        async fallbackToDefaultSlot(slot) {
+          console.log(`P${this.playerId} Executing fallback slot animation`);
+          if (this.playerId === 1) {
+            spinTo1(slot);
+          } else {
+            spinTo2(slot);
+          }
+          await this.waitForSlotAnimation();
+        }
+
+        // 指定時間だけスロットを回転
+        async spinSlotForDuration(slot, duration) {
+          // Ensure minimum and maximum duration limits
+          const minDuration = 2000; // 最低2秒
+          const maxDuration = 10000; // 最大10秒
+          const safeDuration = Math.max(
+            minDuration,
+            Math.min(maxDuration, duration),
+          );
+
+          if (safeDuration !== duration) {
+            console.warn(
+              `P${this.playerId} Duration adjusted from ${duration}ms to ${safeDuration}ms`,
+            );
+          }
+
+          // スロット回転開始
+          console.log(
+            `P${this.playerId} Starting slot spin for ${safeDuration}ms`,
+          );
           if (this.playerId === 1) {
             spinTo1(slot);
           } else {
             spinTo2(slot);
           }
 
-          // スロットアニメーション完了を待つ
-          await this.waitForSlotAnimation();
+          // 指定時間待機
+          await new Promise((resolve) => setTimeout(resolve, safeDuration));
 
+          // スロット回転完了を待つ
           console.log(
-            `Player ${this.playerId} slot animation completed, task finished`,
+            `P${this.playerId} Waiting for slot animation to complete`,
           );
+          await this.waitForSlotAnimation();
         }
 
         // スロットアニメーション完了を待つ
@@ -1772,6 +2081,29 @@
                 element.textContent = `未初期化${spinStatusText}`;
             }
           }
+        }
+
+        function setTemporalyBackGroundVideo(playerId, videoPath) {
+          const beforeVideo = document.getElementById(`video${playerId}`);
+          const beforeSource = document.getElementById(`source${playerId}`);
+          const beforeVideoPath = beforeSource.getAttribute("src") ?? "";
+
+          beforeVideo.removeAttribute("autoplay");
+          beforeVideo.removeAttribute("loop");
+          beforeVideo.removeAttribute("muted");
+
+          beforeSource.setAttribute("src", videoPath);
+
+          const video = document.getElementById(`video${playerId}`);
+          video.play();
+          video.addEventListener("ended", () => {
+            beforeSource.setAttribute("src", beforeVideoPath);
+            beforeVideo.setAttribute("autoplay", "");
+            beforeVideo.setAttribute("loop", "");
+            beforeVideo.setAttribute("muted", "");
+            video.load();
+            video.removeEventListener("ended");
+          });
         }
 
         // タスクキューを初期化（updateState関数が定義された後）

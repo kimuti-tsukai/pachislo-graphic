@@ -591,6 +591,7 @@ var Game = class {
       throw new UninitializedError();
     }
     this.output.finishGame(this.state);
+    this.state = GameState.Uninitialized();
   }
   launchBall() {
     if (this.isSlotSpinning) {
