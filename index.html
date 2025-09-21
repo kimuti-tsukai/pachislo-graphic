@@ -328,14 +328,7 @@
             <button onclick="applyTimeSettings(1)">Apply</button>
             <button onclick="toggleTimeSettings(1)">Close</button>
           </div>
-          <video
-            id="video1"
-            autoplay
-            muted
-            loop
-            playsinline
-            onclick="toggleTimeSettings(1)"
-          >
+          <video id="video1" autoplay muted loop playsinline>
             <source src="" id="source1" />
           </video>
         </div>
@@ -382,14 +375,9 @@
             <button onclick="applyTimeSettings(2)">Apply</button>
             <button onclick="toggleTimeSettings(2)">Close</button>
           </div>
-          <video
-            id="video2"
-            autoplay
-            muted
-            loop
-            playsinline
-            onclick="toggleTimeSettings(2)"
-          ></video>
+          <video id="video2" autoplay muted loop playsinline>
+            <source src="" id="source2" />
+          </video>
         </div>
 
         <div class="state" id="state2">Uninitialized</div>
@@ -801,32 +789,18 @@
 
         // 指定時間だけスロットを回転
         async spinSlotForDuration(slot, duration) {
-          // Ensure minimum and maximum duration limits
-          const minDuration = 2000; // 最低2秒
-          const maxDuration = 10000; // 最大10秒
-          const safeDuration = Math.max(
-            minDuration,
-            Math.min(maxDuration, duration),
-          );
-
-          if (safeDuration !== duration) {
-            console.warn(
-              `P${this.playerId} Duration adjusted from ${duration}ms to ${safeDuration}ms`,
-            );
-          }
+          duration += 500;
 
           // スロット回転開始
-          console.log(
-            `P${this.playerId} Starting slot spin for ${safeDuration}ms`,
-          );
+          console.log(`P${this.playerId} Starting slot spin for ${duration}ms`);
           if (this.playerId === 1) {
-            spinTo1(slot);
+            spinTo1(slot, [duration, duration, duration]);
           } else {
-            spinTo2(slot);
+            spinTo2(slot, [duration, duration, duration]);
           }
 
           // 指定時間待機
-          await new Promise((resolve) => setTimeout(resolve, safeDuration));
+          await new Promise((resolve) => setTimeout(resolve, duration));
 
           // スロット回転完了を待つ
           console.log(
@@ -1029,6 +1003,9 @@
         });
       }
 
+      const defaultDuration = 1800;
+      const defaultLag = 400;
+
       // スロット風回転: 必ず上から下へ回転して目標数字で停止
       // spinDurations: リールごとの時間指定
       //   - null: デフォルトのランダム時間
@@ -1085,8 +1062,8 @@
             duration = baseDuration + extra;
           } else {
             // デフォルトの時間計算（後のリールほど長く、ばらつきを減らして自然に）
-            baseDuration = 1800 + Math.random() * 600;
-            const extra = idx * 400 + Math.random() * 200;
+            baseDuration = defaultDuration + Math.random() * 600;
+            const extra = idx * defaultLag + Math.random() * 200;
             duration = baseDuration + extra;
           }
 
