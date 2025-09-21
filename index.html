@@ -60,6 +60,78 @@
         z-index: 1;
       }
 
+      .timer-display {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10;
+        min-width: 60px;
+        text-align: center;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .time-settings {
+        position: absolute;
+        top: 50px;
+        left: 10px;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        z-index: 20;
+        display: none;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        min-width: 200px;
+      }
+
+      .time-settings.visible {
+        display: block;
+      }
+
+      .time-settings label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .time-settings input {
+        width: 60px;
+        padding: 4px;
+        margin-left: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .time-settings button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        margin: 5px 5px 0 0;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .time-settings button:hover {
+        background-color: #45a049;
+      }
+
+      .time-settings button:last-child {
+        background-color: #f44336;
+      }
+
+      .time-settings button:last-child:hover {
+        background-color: #da190b;
+      }
+
       .state {
         padding: 20px;
         /*background-color: rgba(0, 0, 0, 0.7);*/
@@ -68,6 +140,7 @@
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         font-weight: bold;
         margin-bottom: 10px;
+        margin-top: 60px;
       }
 
       .slot-container {
@@ -98,6 +171,7 @@
         /*background-color: rgba(0, 0, 0, 0.6);*/
         padding: 15px;
         border-radius: 8px;
+        margin-top: 20px;
       }
 
       .reel {
@@ -198,7 +272,23 @@
         </div>
 
         <div class="right-panel" id="right-panel1">
-          <video id="video1" autoplay muted loop playsinline></video>
+          <div class="timer-display" id="timer-display1">5:00</div>
+          <div class="time-settings" id="time-settings1">
+            <label
+              >Timer (minutes):
+              <input type="number" id="timer-input1" value="5" min="1" max="60"
+            /></label>
+            <button onclick="applyTimeSettings(1)">Apply</button>
+            <button onclick="toggleTimeSettings(1)">Close</button>
+          </div>
+          <video
+            id="video1"
+            autoplay
+            muted
+            loop
+            playsinline
+            onclick="toggleTimeSettings(1)"
+          ></video>
 
           <div class="state" id="state1">Uninitialized</div>
 
@@ -235,7 +325,23 @@
         </div>
 
         <div class="right-panel" id="right-panel2">
-          <video id="video2" autoplay muted loop playsinline></video>
+          <div class="timer-display" id="timer-display2">5:00</div>
+          <div class="time-settings" id="time-settings2">
+            <label
+              >Timer (minutes):
+              <input type="number" id="timer-input2" value="5" min="1" max="60"
+            /></label>
+            <button onclick="applyTimeSettings(2)">Apply</button>
+            <button onclick="toggleTimeSettings(2)">Close</button>
+          </div>
+          <video
+            id="video2"
+            autoplay
+            muted
+            loop
+            playsinline
+            onclick="toggleTimeSettings(2)"
+          ></video>
 
           <div class="state" id="state2">Uninitialized</div>
 
@@ -1149,6 +1255,9 @@
           this.recreateWasmGame = recreateWasmGame; // WASMGame再作成用の関数
           this.lastLaunchTime = 0; // 最後のボール発射時刻を記録
           this.gameTimer = null; // ゲーム終了タイマー
+          this.gameDuration = 5 * 60 * 1000; // デフォルト5分
+          this.gameStartTime = null; // ゲーム開始時刻
+          this.displayTimer = null; // タイマー表示用インターバル
 
           this.init(); // canvasと物理エンジンは最初から初期化
         }
@@ -1198,13 +1307,22 @@
           );
           this.run_step_with_command("StartGame");
 
-          // 5分後にゲームを終了させるタイマーを設定
-          this.gameTimer = setTimeout(
-            async () => {
-              await this.endGame();
-            },
-            5 * 60 * 1000,
-          ); // 5分 = 300秒 = 300,000ミリ秒
+          // 既存のタイマーをクリア
+          if (this.displayTimer) {
+            clearInterval(this.displayTimer);
+            this.displayTimer = null;
+          }
+
+          // ゲーム開始時刻を記録
+          this.gameStartTime = Date.now();
+
+          // 設定時間後にゲームを終了させるタイマーを設定
+          this.gameTimer = setTimeout(async () => {
+            await this.endGame();
+          }, this.gameDuration);
+
+          // タイマー表示を開始
+          this.startTimerDisplay();
 
           console.log(
             `プレイヤー${this.playerId}: ゲーム開始！5分後に自動終了します。isGameStarted: ${this.wasmgame.isGameStarted()}`,
@@ -1226,6 +1344,26 @@
             clearTimeout(this.gameTimer);
             this.gameTimer = null;
           }
+
+          // タイマー表示をクリア
+          if (this.displayTimer) {
+            clearInterval(this.displayTimer);
+            this.displayTimer = null;
+          }
+
+          // タイマー表示をリセット
+          const timerDisplay = document.getElementById(
+            `timer-display${this.playerId}`,
+          );
+          if (timerDisplay) {
+            const minutes = Math.floor(this.gameDuration / 60000);
+            timerDisplay.textContent = `${minutes}:00`;
+            timerDisplay.style.color = "white";
+            timerDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+          }
+
+          // ゲーム開始時刻をリセット
+          this.gameStartTime = null;
 
           // ゲーム終了処理
           console.log(
@@ -1255,6 +1393,48 @@
           console.log(
             `プレイヤー${this.playerId}: ゲーム終了処理完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
           );
+        }
+
+        startTimerDisplay() {
+          this.displayTimer = setInterval(() => {
+            if (this.gameStartTime) {
+              const elapsed = Date.now() - this.gameStartTime;
+              const remaining = Math.max(0, this.gameDuration - elapsed);
+              const minutes = Math.floor(remaining / 60000);
+              const seconds = Math.floor((remaining % 60000) / 1000);
+              const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+              const timerDisplay = document.getElementById(
+                `timer-display${this.playerId}`,
+              );
+              if (timerDisplay) {
+                timerDisplay.textContent = timeString;
+                if (remaining <= 30000) {
+                  // 30秒以下で赤色警告
+                  timerDisplay.style.color = "#ff4444";
+                  timerDisplay.style.backgroundColor = "rgba(255, 68, 68, 0.2)";
+                }
+              }
+
+              if (remaining === 0 && this.displayTimer) {
+                clearInterval(this.displayTimer);
+                this.displayTimer = null;
+              }
+            }
+          }, 1000);
+        }
+
+        setGameDuration(minutes) {
+          this.gameDuration = minutes * 60 * 1000;
+          // タイマー表示も更新
+          const timerDisplay = document.getElementById(
+            `timer-display${this.playerId}`,
+          );
+          if (timerDisplay) {
+            timerDisplay.textContent = `${minutes}:00`;
+            timerDisplay.style.color = "white";
+            timerDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+          }
         }
 
         setupRenderer() {
@@ -1973,6 +2153,31 @@
         console.log(
           "デバッグコマンド: window.debugKeyStates(), window.clearAllKeyStates()",
         );
+      }
+
+      // タイマー設定関数
+      function toggleTimeSettings(playerId) {
+        const settings = document.getElementById(`time-settings${playerId}`);
+        settings.classList.toggle("visible");
+      }
+
+      function applyTimeSettings(playerId) {
+        const input = document.getElementById(`timer-input${playerId}`);
+        const minutes = parseInt(input.value);
+
+        if (minutes < 1 || minutes > 60) {
+          alert("Please enter a time between 1 and 60 minutes.");
+          return;
+        }
+
+        // 対応するゲームインスタンスを取得して時間を設定
+        const game = playerId === 1 ? game1 : game2;
+        if (game) {
+          game.setGameDuration(minutes);
+        }
+
+        // 設定パネルを閉じる
+        toggleTimeSettings(playerId);
       }
 
       main();
