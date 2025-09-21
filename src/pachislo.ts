@@ -440,8 +440,11 @@ export class SlotProducer {
 
   private produceFakeLose(): SlotResult {
     const choices = [...this.choices];
-    shuffleArray(choices);
-    return [choices[0], choices[1], choices[0]];
+    const choiceIndex = Math.floor(Math.random() * choices.length);
+    const shifted =
+      (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) %
+      choices.length;
+    return [choices[choiceIndex], choices[shifted], choices[choiceIndex]];
   }
 
   produce(lotteryResult: LotteryResultType): SlotOutput {
