@@ -381,6 +381,13 @@ export class Lottery {
 // SLOT MODULE
 // ============================================================================
 
+function shuffleArray<T>(array: T[]): void {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
 export type SlotSymbol = number;
 export type SlotResult = SlotSymbol[];
 export type SlotOutput = [SlotResult, SlotResult | null];
@@ -403,7 +410,8 @@ export class SlotProducer {
 
   private produceLose(): SlotResult {
     // Shuffle choices
-    const refChoices = [...this.choices].sort(() => Math.random() - 0.5);
+    const refChoices = [...this.choices];
+    shuffleArray(refChoices);
 
     // Partition into two non-empty groups
     const partition = Math.floor(Math.random() * (refChoices.length - 1)) + 1;
@@ -426,7 +434,14 @@ export class SlotProducer {
 
     // Combine and shuffle
     const result = [...result1, ...result2];
-    return result.sort(() => Math.random() - 0.5);
+    shuffleArray(result);
+    return result;
+  }
+
+  private produceFakeLose(): SlotResult {
+    const choices = [...this.choices];
+    shuffleArray(choices);
+    return [choices[0], choices[1], choices[0]];
   }
 
   produce(lotteryResult: LotteryResultType): SlotOutput {
@@ -437,7 +452,7 @@ export class SlotProducer {
             return [this.produceWin(), null];
           }
           case Win.FakeWin: {
-            return [this.produceLose(), this.produceWin()];
+            return [this.produceFakeLose(), this.produceWin()];
           }
           default: {
             const _exhaustiveCheck: never = lotteryResult.winType;
@@ -452,7 +467,7 @@ export class SlotProducer {
             return [this.produceLose(), null];
           }
           case Lose.FakeLose: {
-            return [this.produceWin(), this.produceLose()];
+            return [this.produceFakeLose(), null];
           }
           default: {
             const _exhaustiveCheck: never = lotteryResult.loseType;

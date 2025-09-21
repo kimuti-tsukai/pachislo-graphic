@@ -281,6 +281,15 @@ var Lottery = class {
     return this.lottery(adjustedProbability);
   }
 };
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [
+      array[j],
+      array[i]
+    ];
+  }
+}
 var SlotProducer = class {
   length;
   choices;
@@ -298,7 +307,8 @@ var SlotProducer = class {
   produceLose() {
     const refChoices = [
       ...this.choices
-    ].sort(() => Math.random() - 0.5);
+    ];
+    shuffleArray(refChoices);
     const partition = Math.floor(Math.random() * (refChoices.length - 1)) + 1;
     const choices1 = refChoices.slice(0, partition);
     const choices2 = refChoices.slice(partition);
@@ -316,7 +326,19 @@ var SlotProducer = class {
       ...result1,
       ...result2
     ];
-    return result.sort(() => Math.random() - 0.5);
+    shuffleArray(result);
+    return result;
+  }
+  produceFakeLose() {
+    const choices = [
+      ...this.choices
+    ];
+    shuffleArray(choices);
+    return [
+      choices[0],
+      choices[1],
+      choices[0]
+    ];
   }
   produce(lotteryResult) {
     switch (lotteryResult.type) {
@@ -330,7 +352,7 @@ var SlotProducer = class {
           }
           case Win.FakeWin: {
             return [
-              this.produceLose(),
+              this.produceFakeLose(),
               this.produceWin()
             ];
           }
@@ -350,8 +372,8 @@ var SlotProducer = class {
           }
           case Lose.FakeLose: {
             return [
-              this.produceWin(),
-              this.produceLose()
+              this.produceFakeLose(),
+              null
             ];
           }
           default: {
