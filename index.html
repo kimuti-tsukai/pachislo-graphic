@@ -1102,16 +1102,26 @@
 
       // パチンコゲームコンポーネントクラス
       class PachinkoGame {
-        constructor(canvasId, playerId, keyBinding, nails, wasmGame) {
+        constructor(
+          canvasId,
+          playerId,
+          keyBinding,
+          nails,
+          wasmGame,
+          recreateWasmGame,
+        ) {
           this.canvasId = canvasId;
           this.playerId = playerId;
           this.keyBinding = keyBinding;
           this.fallingBalls = [];
           this.nails_index = nails;
           this.wasmgame = wasmGame;
+          this.recreateWasmGame = recreateWasmGame; // WASMGame再作成用の関数
           this.lastLaunchTime = 0; // 最後のボール発射時刻を記録
+          this.isGameStarted = false; // WASMゲームが開始されているかのフラグ
+          this.gameTimer = null; // ゲーム終了タイマー
 
-          this.init();
+          this.init(); // canvasと物理エンジンは最初から初期化
         }
 
         run_step_with_command(command) {
@@ -1119,9 +1129,6 @@
         }
 
         init() {
-          // パチスロゲームを初期化
-          this.run_step_with_command("StartGame");
-
           // エンジンを作成
           this.engine = Engine.create();
           this.world = this.engine.world;
@@ -1142,6 +1149,85 @@
 
           // エンジンを開始
           this.start();
+        }
+
+        async startWasmGame() {
+          console.log(
+            `プレイヤー${this.playerId}: startWasmGame()が呼ばれました。現在のisGameStarted: ${this.isGameStarted}`,
+          );
+
+          if (this.isGameStarted) {
+            console.log(
+              `プレイヤー${this.playerId}: 既にゲーム開始済みのため処理をスキップします`,
+            );
+            return; // 既にゲーム開始済みの場合は何もしない
+          }
+
+          // パチスロゲームを開始
+          console.log(
+            `プレイヤー${this.playerId}: StartGameコマンドを実行します`,
+          );
+          this.run_step_with_command("StartGame");
+          this.isGameStarted = true;
+
+          // 5分後にゲームを終了させるタイマーを設定
+          this.gameTimer = setTimeout(
+            async () => {
+              await this.endGame();
+            },
+            5 * 60 * 1000,
+          ); // 5分 = 300秒 = 300,000ミリ秒
+
+          console.log(
+            `プレイヤー${this.playerId}: ゲーム開始！5分後に自動終了します。isGameStarted: ${this.isGameStarted}`,
+          );
+        }
+
+        async endGame() {
+          if (!this.isGameStarted) {
+            console.log(
+              `プレイヤー${this.playerId}: endGame()が呼ばれましたが、既にゲームは終了状態です`,
+            );
+            return;
+          }
+
+          console.log(`プレイヤー${this.playerId}: ゲーム終了！`);
+
+          // タイマーをクリア
+          if (this.gameTimer) {
+            clearTimeout(this.gameTimer);
+            this.gameTimer = null;
+          }
+
+          // ゲーム終了処理
+          console.log(
+            `プレイヤー${this.playerId}: FinishGameコマンドを実行します`,
+          );
+          this.run_step_with_command("FinishGame");
+
+          // FinishGameコマンドの処理完了を待つ
+          console.log(
+            `プレイヤー${this.playerId}: ゲーム終了処理の完了を待機中...`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // 新しいWASMGameインスタンスを作成
+          console.log(
+            `プレイヤー${this.playerId}: 新しいWASMGameインスタンスを作成します`,
+          );
+          this.wasmgame = this.recreateWasmGame();
+
+          // windowオブジェクトも更新
+          if (this.playerId === 1) {
+            window.game1 = this.wasmgame;
+          } else if (this.playerId === 2) {
+            window.game2 = this.wasmgame;
+          }
+
+          this.isGameStarted = false;
+          console.log(
+            `プレイヤー${this.playerId}: isGameStartedを${this.isGameStarted}に設定しました`,
+          );
         }
 
         setupRenderer() {
@@ -1442,6 +1528,14 @@
           const rightPanel = document.getElementById(`right-panel${playerId}`);
 
           if (element && rightPanel) {
+            // ゲームが開始されているかチェック
+            const game = playerId === 1 ? game1 : game2;
+            if (!game.isGameStarted) {
+              const startKey = playerId === 1 ? "S" : "K";
+              element.textContent = `未開始 - ${startKey}キーでスタート`;
+              return;
+            }
+
             // スロット回転状態を取得
             const slotStatus = getSlotStatus(playerId);
             const gameSpinningState =
@@ -1585,8 +1679,47 @@
         const wasmGame1 = new WasmGame(input1, output1, config1);
         const wasmGame2 = new WasmGame(input2, output2, config2);
 
-        const game1 = new PachinkoGame("canvas1", 1, "a", nails1, wasmGame1);
-        const game2 = new PachinkoGame("canvas2", 2, "l", nails2, wasmGame2);
+        // WASMGame再作成用の関数
+        const recreateWasmGame1 = () => {
+          const newInput1 = new JsInput();
+          const newOutput1 = new JsOutput(
+            outputFunctions1.default,
+            outputFunctions1.finishGame,
+            outputFunctions1.lotteryNormal,
+            outputFunctions1.lotteryRush,
+            outputFunctions1.lotteryRushContinue,
+          );
+          return new WasmGame(newInput1, newOutput1, config1);
+        };
+
+        const recreateWasmGame2 = () => {
+          const newInput2 = new JsInput();
+          const newOutput2 = new JsOutput(
+            outputFunctions2.default,
+            outputFunctions2.finishGame,
+            outputFunctions2.lotteryNormal,
+            outputFunctions2.lotteryRush,
+            outputFunctions2.lotteryRushContinue,
+          );
+          return new WasmGame(newInput2, newOutput2, config2);
+        };
+
+        const game1 = new PachinkoGame(
+          "canvas1",
+          1,
+          "a",
+          nails1,
+          wasmGame1,
+          recreateWasmGame1,
+        );
+        const game2 = new PachinkoGame(
+          "canvas2",
+          2,
+          "l",
+          nails2,
+          wasmGame2,
+          recreateWasmGame2,
+        );
 
         // グローバルアクセスのためwindowオブジェクトに設定（WasmGameインスタンス）
         window.game1 = wasmGame1;
@@ -1618,7 +1751,7 @@
         const LONG_PRESS_INTERVAL = 700; // 0.7秒間隔
 
         // 連打制限付きのキー処理（初回押下時用）
-        function handleKeyPress(key) {
+        async function handleKeyPress(key) {
           const now = Date.now();
           const lastLaunchTime = lastLaunchTimes.get(key) || 0;
 
@@ -1633,20 +1766,47 @@
           // 発射時刻を更新
           lastLaunchTimes.set(key, now);
 
-          executeKeyAction(key);
+          await executeKeyAction(key);
         }
 
         // 長押し時のキー処理（制限なし）
-        function handleLongPress(key) {
-          executeKeyAction(key);
+        async function handleLongPress(key) {
+          await executeKeyAction(key);
         }
 
         // 実際のキーアクション実行
-        function executeKeyAction(key) {
-          if (key === game1.keyBinding) {
+        async function executeKeyAction(key) {
+          // スタートキーのチェック
+          if (key === "s") {
+            console.log(
+              `Sキーが押されました。game1.isGameStarted: ${game1.isGameStarted}`,
+            );
+            if (!game1.isGameStarted) {
+              console.log("プレイヤー1のゲームを開始します");
+              await game1.startWasmGame();
+              return;
+            } else {
+              console.log("プレイヤー1は既にゲーム開始済みです");
+            }
+          }
+          if (key === "k") {
+            console.log(
+              `Kキーが押されました。game2.isGameStarted: ${game2.isGameStarted}`,
+            );
+            if (!game2.isGameStarted) {
+              console.log("プレイヤー2のゲームを開始します");
+              await game2.startWasmGame();
+              return;
+            } else {
+              console.log("プレイヤー2は既にゲーム開始済みです");
+            }
+          }
+
+          // 通常のキー処理（ゲーム開始後のみ）
+          if (key === game1.keyBinding && game1.isGameStarted) {
             game1.handleKeyInput(game1.keyBinding);
           }
-          if (key === game2.keyBinding) {
+          if (key === game2.keyBinding && game2.isGameStarted) {
             game2.handleKeyInput(game2.keyBinding);
           }
         }
@@ -1662,14 +1822,14 @@
           pressedKeys.add(key);
 
           // 最初のキー入力を即座に実行（連打制限付き）
-          handleKeyPress(key);
+          handleKeyPress(key).catch(console.error);
 
           // 長押し用のインターバルを設定
           if (key === game1.keyBinding || key === game2.keyBinding) {
             const intervalId = setInterval(() => {
               if (pressedKeys.has(key)) {
                 console.log(`Long press: ${key}`);
-                handleLongPress(key);
+                handleLongPress(key).catch(console.error);
               } else {
                 clearInterval(intervalId);
                 keyIntervals.delete(key);
@@ -1744,9 +1904,19 @@
           keyIntervals.clear();
         };
 
-        console.log("🎮 デュアルパチンコゲーム開始！");
-        console.log("プレイヤー1: Aキーで球を落とす (長押し対応 - 0.7秒間隔)");
-        console.log("プレイヤー2: Lキーで球を落とす (長押し対応 - 0.7秒間隔)");
+        // 初期状態の表示を更新
+        const element1 = document.getElementById("state1");
+        const element2 = document.getElementById("state2");
+        if (element1) element1.textContent = "未開始 - Sキーでスタート";
+        if (element2) element2.textContent = "未開始 - Kキーでスタート";
+
+        console.log("🎮 デュアルパチンコゲーム準備完了！");
+        console.log(
+          "プレイヤー1: Sキーでゲーム開始、Aキーで球を落とす (長押し対応 - 0.7秒間隔)",
+        );
+        console.log(
+          "プレイヤー2: Kキーでゲーム開始、Lキーで球を落とす (長押し対応 - 0.7秒間隔)",
+        );
         console.log(
           "デバッグコマンド: window.debugKeyStates(), window.clearAllKeyStates()",
         );
