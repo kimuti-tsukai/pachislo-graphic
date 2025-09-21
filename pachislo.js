@@ -466,11 +466,12 @@ var JsInput = class extends UserInput {
 var JsOutput = class extends UserOutput {
   defaultFn;
   finishGameFn;
+  startGameFn;
   lotteryNormalFn;
   lotteryRushFn;
   lotteryRushContinueFn;
-  constructor(defaultFn, finishGameFn, lotteryNormalFn, lotteryRushFn, lotteryRushContinueFn) {
-    super(), this.defaultFn = defaultFn, this.finishGameFn = finishGameFn, this.lotteryNormalFn = lotteryNormalFn, this.lotteryRushFn = lotteryRushFn, this.lotteryRushContinueFn = lotteryRushContinueFn;
+  constructor(defaultFn, finishGameFn, startGameFn, lotteryNormalFn, lotteryRushFn, lotteryRushContinueFn) {
+    super(), this.defaultFn = defaultFn, this.finishGameFn = finishGameFn, this.startGameFn = startGameFn, this.lotteryNormalFn = lotteryNormalFn, this.lotteryRushFn = lotteryRushFn, this.lotteryRushContinueFn = lotteryRushContinueFn;
   }
   default(transition) {
     if (this.defaultFn) {
@@ -480,6 +481,11 @@ var JsOutput = class extends UserOutput {
   finishGame(state) {
     if (this.finishGameFn) {
       this.finishGameFn(state);
+    }
+  }
+  startGame(state) {
+    if (this.startGameFn) {
+      this.startGameFn(state);
     }
   }
   lotteryNormal(result, slot) {
@@ -578,6 +584,7 @@ var Game = class {
   }
   start() {
     this.state = GameState.init(this.state, this.config);
+    this.output.startGame(this.state);
   }
   finish() {
     if (GameState.isUninitialized(this.state)) {
@@ -757,6 +764,11 @@ var CLIOutput = class extends UserOutput {
   finishGame(state) {
     this.log("Game finished!");
     this.log(`Final state: ${JSON.stringify(state)}`);
+  }
+  startGame(state) {
+    this.log("Game started!");
+    this.log(`Initial state: ${JSON.stringify(state)}`);
+    this.log("");
   }
   lotteryNormal(result, slot) {
     const [slotResult, but] = slot;

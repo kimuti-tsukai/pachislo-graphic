@@ -573,6 +573,7 @@ export abstract class UserInput {
 export abstract class UserOutput {
   abstract default(transition: Transition): void;
   abstract finishGame(state: GameStateType): void;
+  abstract startGame(state: GameStateType): void;
   abstract lotteryNormal(result: LotteryResultType, slot: SlotOutput): void;
   abstract lotteryRush(result: LotteryResultType, slot: SlotOutput): void;
   abstract lotteryRushContinue(
@@ -608,6 +609,7 @@ export class JsInput extends UserInput {
 export type LogFunction = (message: string) => void;
 export type DefaultFunction = (transition: Transition) => void;
 export type FinishGameFunction = (state: GameStateType) => void;
+export type StartGameFunction = (state: GameStateType) => void;
 export type LotteryFunction = (
   result: LotteryResultType,
   slot: SlotOutput,
@@ -617,6 +619,7 @@ export class JsOutput extends UserOutput {
   constructor(
     private readonly defaultFn: DefaultFunction | null,
     private readonly finishGameFn: FinishGameFunction | null,
+    private readonly startGameFn: StartGameFunction | null,
     private readonly lotteryNormalFn: LotteryFunction | null,
     private readonly lotteryRushFn: LotteryFunction | null,
     private readonly lotteryRushContinueFn: LotteryFunction | null,
@@ -633,6 +636,12 @@ export class JsOutput extends UserOutput {
   finishGame(state: GameStateType): void {
     if (this.finishGameFn) {
       this.finishGameFn(state);
+    }
+  }
+
+  startGame(state: GameStateType): void {
+    if (this.startGameFn) {
+      this.startGameFn(state);
     }
   }
 
@@ -746,6 +755,7 @@ export class Game {
 
   start(): void {
     this.state = GameState.init(this.state, this.config);
+    this.output.startGame(this.state);
   }
 
   finish(): void {
@@ -1004,6 +1014,12 @@ export class CLIOutput extends UserOutput {
   finishGame(state: GameStateType): void {
     this.log("Game finished!");
     this.log(`Final state: ${JSON.stringify(state)}`);
+  }
+
+  startGame(state: GameStateType): void {
+    this.log("Game started!");
+    this.log(`Initial state: ${JSON.stringify(state)}`);
+    this.log("");
   }
 
   lotteryNormal(result: LotteryResultType, slot: SlotOutput): void {
