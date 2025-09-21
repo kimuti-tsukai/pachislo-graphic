@@ -674,9 +674,10 @@
             video.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
             video.style.borderRadius = "8px";
             video.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
-            video.muted = true;
-            video.autoplay = true;
+            video.muted = false;
+            video.autoplay = false;
             video.playsInline = true;
+            video.hidden = true;
 
             // Timeout for loading
             const loadTimeout = setTimeout(() => {
@@ -689,6 +690,14 @@
               const duration = video.duration * 1000; // ミリ秒に変換
               console.log(
                 `Video loaded successfully: ${videoPath}, duration: ${duration}ms`,
+              );
+
+              setTimeout(
+                () => {
+                  video.hidden = false;
+                  video.play();
+                },
+                defaultDuration + 2 * defaultLag,
               );
 
               // Safely append to right-panel with proper setup
@@ -789,14 +798,14 @@
 
         // 指定時間だけスロットを回転
         async spinSlotForDuration(slot, duration) {
-          duration += 500;
+          duration += defaultDuration + 2 * defaultLag + 1500;
 
           // スロット回転開始
           console.log(`P${this.playerId} Starting slot spin for ${duration}ms`);
           if (this.playerId === 1) {
-            spinTo1(slot, [duration, duration, duration]);
+            spinTo1(slot, [defaultDuration, duration, defaultDuration]);
           } else {
-            spinTo2(slot, [duration, duration, duration]);
+            spinTo2(slot, [defaultDuration, duration, defaultDuration]);
           }
 
           // 指定時間待機
