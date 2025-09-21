@@ -657,26 +657,46 @@
           return null;
         }
 
-        // right-panel内で映像を再生し、長さを取得（9:16動画対応）
+        // 新しいvideoタグを作成し既存タグと入れ替えて映像を再生
         async playBackgroundVideo(videoPath) {
           return new Promise((resolve, reject) => {
-            const video = document.createElement("video");
-            video.style.position = "absolute";
-            video.style.top = "50%";
-            video.style.left = "50%";
-            video.style.transform = "translate(-50%, -50%)";
-            video.style.maxWidth = "100%";
-            video.style.maxHeight = "100%";
-            video.style.width = "auto";
-            video.style.height = "auto";
-            video.style.objectFit = "contain";
-            video.style.zIndex = "5";
-            video.style.borderRadius = "8px";
-            video.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.6)";
-            video.muted = false;
-            video.autoplay = false;
-            video.playsInline = true;
-            video.hidden = true;
+            const rightPanel = document.getElementById(
+              `right-panel${this.playerId}`,
+            );
+            const originalVideo = document.getElementById(
+              `video${this.playerId}`,
+            );
+
+            if (!rightPanel || !originalVideo) {
+              reject(
+                new Error(
+                  `Required elements not found for player ${this.playerId}`,
+                ),
+              );
+              return;
+            }
+
+            // 新しいvideoタグを作成
+            const newVideo = document.createElement("video");
+            const newSource = document.createElement("source");
+
+            // 新しいvideoタグの設定
+            newVideo.id = `temp-video${this.playerId}`;
+            newVideo.style.position = "absolute";
+            newVideo.style.top = "0";
+            newVideo.style.left = "0";
+            newVideo.style.width = "100%";
+            newVideo.style.height = "100%";
+            newVideo.style.objectFit = "cover";
+            newVideo.style.zIndex = "5";
+            newVideo.style.borderRadius = "8px";
+            newVideo.muted = false;
+            newVideo.autoplay = false;
+            newVideo.playsInline = true;
+            newVideo.preload = "auto";
+
+            newSource.src = videoPath;
+            newVideo.appendChild(newSource);
 
             // Timeout for loading
             const loadTimeout = setTimeout(() => {
@@ -684,103 +704,140 @@
               reject(new Error(`Video loading timeout: ${videoPath}`));
             }, 10000); // 10秒タイムアウト
 
-            video.onloadedmetadata = () => {
+            const onLoadedMetadata = () => {
               clearTimeout(loadTimeout);
-              const duration = video.duration * 1000; // ミリ秒に変換
+              const duration = newVideo.duration * 1000; // ミリ秒に変換
               console.log(
                 `Video loaded successfully: ${videoPath}, duration: ${duration}ms`,
               );
 
-              setTimeout(
-                () => {
-                  video.hidden = false;
-                  video.play();
-                },
-                defaultDuration + 2 * defaultLag,
-              );
-
-              // Safely append to right-panel with proper setup
-              try {
-                const rightPanel = document.getElementById(
-                  `right-panel${this.playerId}`,
-                );
-                if (rightPanel) {
-                  // Ensure right-panel is set up for video overlay
-                  rightPanel.style.position = "relative";
-                  rightPanel.style.overflow = "hidden";
-
-                  // Create video overlay container for better control
-                  const videoOverlay = document.createElement("div");
-                  videoOverlay.className = "video-overlay";
-                  videoOverlay.style.position = "absolute";
-                  videoOverlay.style.top = "0";
-                  videoOverlay.style.left = "0";
-                  videoOverlay.style.width = "100%";
-                  videoOverlay.style.height = "100%";
-                  videoOverlay.style.zIndex = "-10";
-                  videoOverlay.style.display = "flex";
-                  videoOverlay.style.alignItems = "center";
-                  videoOverlay.style.justifyContent = "center";
-                  videoOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-                  videoOverlay.style.borderRadius = "8px";
-
-                  videoOverlay.appendChild(video);
-                  rightPanel.appendChild(videoOverlay);
-
-                  // Store reference for cleanup
-                  video._overlayContainer = videoOverlay;
-                } else {
-                  console.warn(
-                    `Right panel not found for player ${this.playerId}`,
-                  );
-                  reject(
-                    new Error(
-                      `Right panel not found for player ${this.playerId}`,
-                    ),
-                  );
-                  return;
-                }
-              } catch (error) {
-                console.warn(`Failed to append video to right-panel:`, error);
-                reject(error);
-                return;
-              }
-
-              // 映像終了後に削除（エラーハンドリング付き）
-              video.onended = () => {
-                try {
-                  if (
-                    video._overlayContainer &&
-                    video._overlayContainer.parentNode
-                  ) {
-                    video._overlayContainer.parentNode.removeChild(
-                      video._overlayContainer,
-                    );
-                  } else if (video.parentNode) {
-                    video.parentNode.removeChild(video);
+              // 映像の準備完了を待つ
+              const waitForCanPlay = () => {
+                return new Promise((resolve) => {
+                  if (newVideo.readyState >= 3) {
+                    // HAVE_FUTURE_DATA以上
+                    resolve();
+                  } else {
+                    const onCanPlay = () => {
+                      newVideo.removeEventListener("canplay", onCanPlay);
+                      resolve();
+                    };
+                    newVideo.addEventListener("canplay", onCanPlay);
                   }
-                } catch (error) {
-                  console.warn(`Failed to remove video element:`, error);
-                }
+                });
               };
+
+              // 映像の準備を開始
+              waitForCanPlay()
+                .then(() => {
+                  console.log(`Video ready for playback: ${videoPath}`);
+
+                  // スロット開始のタイミングで映像を入れ替えて開始
+                  setTimeout(
+                    () => {
+                      // 映像再生時に既存のvideoタグと入れ替え
+                      originalVideo.style.display = "none";
+                      rightPanel.appendChild(newVideo);
+
+                      // DOM操作とブラウザレンダリングの完了を待ってから再生開始
+                      requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                          newVideo.currentTime = 0; // 再生位置を確実にリセット
+                          newVideo.play().catch((error) => {
+                            console.warn(
+                              `Failed to play video: ${error.message}`,
+                            );
+                          });
+                        });
+                      });
+                    },
+                    defaultDuration + 2 * defaultLag,
+                  );
+                })
+                .catch((error) => {
+                  console.warn(`Video preparation failed: ${error.message}`);
+                  // フォールバック処理
+                  setTimeout(
+                    () => {
+                      originalVideo.style.display = "none";
+                      rightPanel.appendChild(newVideo);
+                      requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                          newVideo.play().catch((error) => {
+                            console.warn(
+                              `Fallback video play failed: ${error.message}`,
+                            );
+                          });
+                        });
+                      });
+                    },
+                    defaultDuration + 2 * defaultLag,
+                  );
+                });
+
+              // 映像終了後のクリーンアップ
+              const onVideoEnded = () => {
+                try {
+                  // 新しいvideoタグを削除
+                  if (newVideo.parentNode) {
+                    newVideo.parentNode.removeChild(newVideo);
+                  }
+
+                  // 元のvideoタグを表示に戻す
+                  originalVideo.style.display = "";
+
+                  console.log(
+                    `Player ${this.playerId} video replaced back to original`,
+                  );
+                } catch (error) {
+                  console.warn(`Failed to restore video elements:`, error);
+                }
+
+                // イベントリスナーを削除
+                newVideo.removeEventListener("ended", onVideoEnded);
+                newVideo.removeEventListener(
+                  "loadedmetadata",
+                  onLoadedMetadata,
+                );
+                newVideo.removeEventListener("error", onVideoError);
+              };
+
+              newVideo.addEventListener("ended", onVideoEnded);
 
               // Default duration fallback if video duration is invalid
               resolve(duration > 0 ? duration : 3000); // 最低3秒
             };
 
-            video.onerror = (error) => {
+            const onVideoError = (error) => {
               clearTimeout(loadTimeout);
               console.error(`Video error for ${videoPath}:`, error);
+
+              // エラー時のクリーンアップ
+              try {
+                if (newVideo.parentNode) {
+                  newVideo.parentNode.removeChild(newVideo);
+                }
+                originalVideo.style.display = "";
+              } catch (cleanupError) {
+                console.warn(
+                  `Failed to cleanup after video error:`,
+                  cleanupError,
+                );
+              }
+
+              // イベントリスナーを削除
+              newVideo.removeEventListener("loadedmetadata", onLoadedMetadata);
+              newVideo.removeEventListener("error", onVideoError);
+
               reject(new Error(`Failed to load video: ${videoPath}`));
             };
 
-            // Set source and handle immediate errors
-            try {
-              video.src = videoPath;
-            } catch (error) {
-              clearTimeout(loadTimeout);
-              reject(new Error(`Invalid video path: ${videoPath}`));
-            }
+            newVideo.addEventListener("loadedmetadata", onLoadedMetadata);
+            newVideo.addEventListener("error", onVideoError);
+
+            console.log(
+              `Player ${this.playerId} loading new video: ${videoPath}`,
+            );
           });
         }
 
