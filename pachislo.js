@@ -533,7 +533,6 @@ var Game = class {
     return this.runStepWithCommand(command);
   }
   runStepWithCommand(command) {
-    this.output.default(new Transition(this.beforeState, this.state));
     this.beforeState = {
       ...this.state
     };
@@ -567,6 +566,7 @@ var Game = class {
       controlCommand = command;
     }
     controlCommand.execute(this);
+    this.output.default(new Transition(this.beforeState, this.state));
     return "continue";
   }
   run() {

@@ -688,7 +688,6 @@ export class Game {
   }
 
   runStepWithCommand(command: CommandType | null): StepResult {
-    this.output.default(new Transition(this.beforeState, this.state));
     this.beforeState = { ...this.state };
 
     if (
@@ -731,6 +730,8 @@ export class Game {
     }
 
     controlCommand.execute(this);
+
+    this.output.default(new Transition(this.beforeState, this.state));
 
     return "continue";
   }
