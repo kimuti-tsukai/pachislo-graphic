@@ -27,9 +27,11 @@ serve(
 
     // Handle API endpoint for listing video files
     if (pathname === "/api/list-videos" && req.method === "POST") {
+      console.log("🎯 API endpoint /api/list-videos called");
       try {
         const body = await req.json();
         const folderPath = body.folder;
+        console.log("📁 Requested folder path:", folderPath);
 
         if (!folderPath) {
           return new Response(
@@ -45,6 +47,7 @@ serve(
         const files = [];
 
         try {
+          console.log("🔍 Reading directory:", folderPath);
           for await (const dirEntry of Deno.readDir(folderPath)) {
             if (dirEntry.isFile) {
               const ext = dirEntry.name.toLowerCase().substring(
@@ -52,9 +55,11 @@ serve(
               );
               if (videoExtensions.includes(ext)) {
                 files.push(dirEntry.name);
+                console.log("🎬 Found video file:", dirEntry.name);
               }
             }
           }
+          console.log("📋 Total video files found:", files.length);
         } catch (error) {
           console.error(`Error reading directory ${folderPath}:`, error);
           return new Response(
@@ -66,6 +71,7 @@ serve(
           );
         }
 
+        console.log("✅ Sending response with files:", files);
         return new Response(JSON.stringify(files), {
           headers: {
             "Content-Type": "application/json",

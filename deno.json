@@ -22,6 +22,8 @@
     "test": "deno test",
     "demo": "deno run src/pachislo.ts",
     "serve": "deno run --allow-net --allow-read server.ts",
+    "build": "deno run --allow-read --allow-write --allow-run scripts/build.ts",
+    "generate-videos": "deno run --allow-read --allow-write scripts/generate-video-list.ts",
     "check": "deno check src/pachislo.ts",
     "lint": "deno lint src/",
     "fmt": "deno fmt src/"

@@ -40,10 +40,11 @@
       }
 
       .right-panel {
-        flex: 0 0 250px;
+        flex: 0 0 350px;
+        height: 500px;
         padding: 20px;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
       }
 
       .right-panel video {
@@ -53,7 +54,9 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        z-index: -1;
+        z-index: -999;
+        transform: translateZ(-1px);
+        will-change: transform;
       }
 
       .right-panel > * {
@@ -137,8 +140,8 @@
       /* Lottery video overlay styles for 9:16 aspect ratio */
       .right-panel {
         position: relative;
-        overflow: hidden;
-        min-height: 400px;
+        overflow: visible;
+        height: 500px;
         min-width: 200px;
       }
 
@@ -148,22 +151,21 @@
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: rgba(0, 0, 0, 0.8);
+        z-index: -998;
         border-radius: 8px;
+        transform: translateZ(-1px);
+        will-change: transform;
       }
 
       .video-overlay video {
-        max-width: 90%;
-        max-height: 90%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
         border-radius: 4px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        z-index: -999;
+        transform: translateZ(-2px);
+        will-change: transform;
       }
 
       .right-panel > *:not(.video-overlay) {
@@ -178,8 +180,11 @@
         border-radius: 8px;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         font-weight: bold;
-        margin-bottom: 10px;
-        margin-top: 60px;
+        position: absolute;
+        top: 80px;
+        right: 20px;
+        width: 310px;
+        z-index: 100;
       }
 
       .slot-container {
@@ -210,7 +215,11 @@
         /*background-color: rgba(0, 0, 0, 0.6);*/
         padding: 15px;
         border-radius: 8px;
-        margin-top: 20px;
+        position: absolute;
+        top: 160px;
+        right: 20px;
+        width: 310px;
+        z-index: 100;
       }
 
       .reel {
@@ -329,31 +338,31 @@
           >
             <source src="" id="source1" />
           </video>
+        </div>
 
-          <div class="state" id="state1">Uninitialized</div>
+        <div class="state" id="state1">Uninitialized</div>
 
-          <div class="slot-wrap" id="slot">
-            <!-- 3つのリールを用意 -->
-            <div class="reel" data-index="0">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+        <div class="slot-wrap" id="slot1">
+          <!-- 3つのリールを用意 -->
+          <div class="reel" data-index="0">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
+          </div>
 
-            <div class="reel" data-index="1">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+          <div class="reel" data-index="1">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
+          </div>
 
-            <div class="reel" data-index="2">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+          <div class="reel" data-index="2">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
           </div>
         </div>
       </div>
@@ -381,31 +390,31 @@
             playsinline
             onclick="toggleTimeSettings(2)"
           ></video>
+        </div>
 
-          <div class="state" id="state2">Uninitialized</div>
+        <div class="state" id="state2">Uninitialized</div>
 
-          <div class="slot-wrap" id="slot2">
-            <!-- 3つのリールを用意 -->
-            <div class="reel" data-index="0">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+        <div class="slot-wrap" id="slot2">
+          <!-- 3つのリールを用意 -->
+          <div class="reel" data-index="0">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
+          </div>
 
-            <div class="reel" data-index="1">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+          <div class="reel" data-index="1">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
+          </div>
 
-            <div class="reel" data-index="2">
-              <div class="reel-viewport">
-                <div class="reel-list"></div>
-              </div>
-              <div class="center-frame"></div>
+          <div class="reel" data-index="2">
+            <div class="reel-viewport">
+              <div class="reel-list"></div>
             </div>
+            <div class="center-frame"></div>
           </div>
         </div>
       </div>
@@ -416,7 +425,7 @@
     <script type="module">
       const REPEAT = 16; // 数字列を何回繰り返すか
       const numbers = [...Array(10).keys()].reverse(); // [9,8,7,6,5,4,3,2,1,0]
-      const reels1 = Array.from(document.querySelectorAll("#slot .reel"));
+      const reels1 = Array.from(document.querySelectorAll("#slot1 .reel"));
       const reels2 = Array.from(document.querySelectorAll("#slot2 .reel"));
       const cellH =
         parseInt(
@@ -533,7 +542,7 @@
           } else if (lotteryResult.Lose !== undefined) {
             // Rust-style enum format: { Lose: "Default" } or { Lose: "FakeLose" }
             videoFolder =
-              lotteryResult.Lose === "FakeLose" ? "images/lose" : "images/lose";
+              lotteryResult.Lose === "FakeLose" ? "images/lose" : "";
           } else if (lotteryResult.type === "Win") {
             // JavaScript-style format: { type: "Win", winType: "Default" }
             videoFolder =
@@ -543,14 +552,21 @@
           } else if (lotteryResult.type === "Lose") {
             // JavaScript-style format: { type: "Lose", loseType: "Default" }
             videoFolder =
-              lotteryResult.loseType === "FakeLose"
-                ? "images/lose"
-                : "images/lose";
+              lotteryResult.loseType === "FakeLose" ? "images/lose" : "";
           }
 
           console.log(
             `P${this.playerId} Selected video folder: ${videoFolder}`,
           );
+
+          // If no video folder specified (regular lose), just spin slots
+          if (!videoFolder) {
+            console.log(
+              `P${this.playerId} No video needed for regular lose, spinning slots only`,
+            );
+            await this.fallbackToDefaultSlot(slot);
+            return;
+          }
 
           try {
             // フォルダから映像ファイルを取得してランダム選択
@@ -605,25 +621,38 @@
           };
 
           try {
-            const response = await fetch("/api/list-videos", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ folder: folderPath }),
-            });
+            console.log(
+              `🎯 Loading videos from static JSON for folder: ${folderPath}`,
+            );
 
+            // Load video list from static JSON file
+            const response = await fetch("video-list.json");
             if (response.ok) {
-              const videos = await response.json();
+              const videoList = await response.json();
+              const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
+              const videos = videoList[folderName] || [];
+
+              console.log(`🎬 Found ${videos.length} videos:`, videos);
               if (videos.length > 0) {
                 const randomIndex = Math.floor(Math.random() * videos.length);
-                return `${folderPath}/${videos[randomIndex]}`;
+                const selectedVideo = `${folderPath}/${videos[randomIndex]}`;
+                console.log(`✅ Selected video: ${selectedVideo}`);
+                return selectedVideo;
               }
+            } else {
+              console.error(
+                `❌ Failed to load video-list.json: ${response.status}`,
+              );
             }
 
-            console.warn(`API failed for ${folderPath}, using fallback`);
-          } catch (error) {
             console.warn(
-              `API error for ${folderPath}, using fallback:`,
+              `⚠️ JSON loading failed for ${folderPath}, using fallback`,
+            );
+          } catch (error) {
+            console.error(
+              `💥 JSON loading error for ${folderPath}, using fallback:`,
               error.message,
+              error,
             );
           }
 
@@ -631,9 +660,12 @@
           const fallback = fallbackFiles[folderPath];
           if (fallback && fallback.length > 0) {
             const randomIndex = Math.floor(Math.random() * fallback.length);
-            return `${folderPath}/${fallback[randomIndex]}`;
+            const fallbackVideo = `${folderPath}/${fallback[randomIndex]}`;
+            console.log(`🔄 Using fallback video: ${fallbackVideo}`);
+            return fallbackVideo;
           }
 
+          console.error(`❌ No fallback available for folder: ${folderPath}`);
           return null;
         }
 
@@ -689,7 +721,7 @@
                   videoOverlay.style.left = "0";
                   videoOverlay.style.width = "100%";
                   videoOverlay.style.height = "100%";
-                  videoOverlay.style.zIndex = "5";
+                  videoOverlay.style.zIndex = "-10";
                   videoOverlay.style.display = "flex";
                   videoOverlay.style.alignItems = "center";
                   videoOverlay.style.justifyContent = "center";

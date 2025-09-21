@@ -1,0 +1,12 @@
+{
+  "background": [],
+  "fakewin": [
+    "once-input-fakewin.mov"
+  ],
+  "win": [
+    "once-input-win.mov"
+  ],
+  "lose": [
+    "once-input-lose.mov"
+  ]
+}
