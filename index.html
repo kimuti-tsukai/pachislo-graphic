@@ -1148,7 +1148,6 @@
           this.wasmgame = wasmGame;
           this.recreateWasmGame = recreateWasmGame; // WASMGame再作成用の関数
           this.lastLaunchTime = 0; // 最後のボール発射時刻を記録
-          this.isGameStarted = false; // WASMゲームが開始されているかのフラグ
           this.gameTimer = null; // ゲーム終了タイマー
 
           this.init(); // canvasと物理エンジンは最初から初期化
@@ -1183,10 +1182,10 @@
 
         async startWasmGame() {
           console.log(
-            `プレイヤー${this.playerId}: startWasmGame()が呼ばれました。現在のisGameStarted: ${this.isGameStarted}`,
+            `プレイヤー${this.playerId}: startWasmGame()が呼ばれました。現在のisGameStarted: ${this.wasmgame.isGameStarted()}`,
           );
 
-          if (this.isGameStarted) {
+          if (this.wasmgame.isGameStarted()) {
             console.log(
               `プレイヤー${this.playerId}: 既にゲーム開始済みのため処理をスキップします`,
             );
@@ -1198,7 +1197,6 @@
             `プレイヤー${this.playerId}: StartGameコマンドを実行します`,
           );
           this.run_step_with_command("StartGame");
-          this.isGameStarted = true;
 
           // 5分後にゲームを終了させるタイマーを設定
           this.gameTimer = setTimeout(
@@ -1209,12 +1207,12 @@
           ); // 5分 = 300秒 = 300,000ミリ秒
 
           console.log(
-            `プレイヤー${this.playerId}: ゲーム開始！5分後に自動終了します。isGameStarted: ${this.isGameStarted}`,
+            `プレイヤー${this.playerId}: ゲーム開始！5分後に自動終了します。isGameStarted: ${this.wasmgame.isGameStarted()}`,
           );
         }
 
         async endGame() {
-          if (!this.isGameStarted) {
+          if (!this.wasmgame.isGameStarted()) {
             console.log(
               `プレイヤー${this.playerId}: endGame()が呼ばれましたが、既にゲームは終了状態です`,
             );
@@ -1254,9 +1252,8 @@
             window.game2 = this.wasmgame;
           }
 
-          this.isGameStarted = false;
           console.log(
-            `プレイヤー${this.playerId}: isGameStartedを${this.isGameStarted}に設定しました`,
+            `プレイヤー${this.playerId}: ゲーム終了処理完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
           );
         }
 
@@ -1560,7 +1557,7 @@
           if (element && rightPanel) {
             // ゲームが開始されているかチェック
             const game = playerId === 1 ? game1 : game2;
-            if (!game.isGameStarted) {
+            if (!game.wasmgame.isGameStarted()) {
               const startKey = playerId === 1 ? "S" : "K";
               element.textContent = `未開始 - ${startKey}キーでスタート`;
               return;
@@ -1633,6 +1630,9 @@
               taskType: "Rush Continue",
             });
           },
+          startGame: (state) => {
+            updateState(1, state);
+          },
         };
 
         const outputFunctions2 = {
@@ -1663,11 +1663,15 @@
               taskType: "Rush Continue",
             });
           },
+          startGame: (state) => {
+            updateState(2, state);
+          },
         };
 
         const output1 = new JsOutput(
           outputFunctions1.default,
           outputFunctions1.finishGame,
+          outputFunctions1.startGame,
           outputFunctions1.lotteryNormal,
           outputFunctions1.lotteryRush,
           outputFunctions1.lotteryRushContinue,
@@ -1676,6 +1680,7 @@
         const output2 = new JsOutput(
           outputFunctions2.default,
           outputFunctions2.finishGame,
+          outputFunctions2.startGame,
           outputFunctions2.lotteryNormal,
           outputFunctions2.lotteryRush,
           outputFunctions2.lotteryRushContinue,
@@ -1715,6 +1720,7 @@
           const newOutput1 = new JsOutput(
             outputFunctions1.default,
             outputFunctions1.finishGame,
+            outputFunctions1.startGame,
             outputFunctions1.lotteryNormal,
             outputFunctions1.lotteryRush,
             outputFunctions1.lotteryRushContinue,
@@ -1727,6 +1733,7 @@
           const newOutput2 = new JsOutput(
             outputFunctions2.default,
             outputFunctions2.finishGame,
+            outputFunctions2.startGame,
             outputFunctions2.lotteryNormal,
             outputFunctions2.lotteryRush,
             outputFunctions2.lotteryRushContinue,
@@ -1809,9 +1816,9 @@
           // スタートキーのチェック
           if (key === "s") {
             console.log(
-              `Sキーが押されました。game1.isGameStarted: ${game1.isGameStarted}`,
+              `Sキーが押されました。game1.isGameStarted: ${game1.wasmgame.isGameStarted()}`,
             );
-            if (!game1.isGameStarted) {
+            if (!game1.wasmgame.isGameStarted()) {
               console.log("プレイヤー1のゲームを開始します");
               await game1.startWasmGame();
               return;
@@ -1821,9 +1828,9 @@
           }
           if (key === "k") {
             console.log(
-              `Kキーが押されました。game2.isGameStarted: ${game2.isGameStarted}`,
+              `Kキーが押されました。game2.isGameStarted: ${game2.wasmgame.isGameStarted()}`,
             );
-            if (!game2.isGameStarted) {
+            if (!game2.wasmgame.isGameStarted()) {
               console.log("プレイヤー2のゲームを開始します");
               await game2.startWasmGame();
               return;
@@ -1833,10 +1840,10 @@
           }
 
           // 通常のキー処理（ゲーム開始後のみ）
-          if (key === game1.keyBinding && game1.isGameStarted) {
+          if (key === game1.keyBinding && game1.wasmgame.isGameStarted()) {
             game1.handleKeyInput(game1.keyBinding);
           }
-          if (key === game2.keyBinding && game2.isGameStarted) {
+          if (key === game2.keyBinding && game2.wasmgame.isGameStarted()) {
             game2.handleKeyInput(game2.keyBinding);
           }
         }

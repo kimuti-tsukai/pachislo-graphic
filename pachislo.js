@@ -591,7 +591,6 @@ var Game = class {
       throw new UninitializedError();
     }
     this.output.finishGame(this.state);
-    this.state = GameState.Uninitialized();
   }
   launchBall() {
     if (this.isSlotSpinning) {
@@ -641,6 +640,9 @@ var Game = class {
   getOutput() {
     return this.output;
   }
+  isGameStarted() {
+    return !GameState.isUninitialized(this.state);
+  }
   setSlotSpinning(spinning) {
     const previousState = this.isSlotSpinning;
     this.isSlotSpinning = spinning;
@@ -686,6 +688,9 @@ var WasmGame = class {
   }
   getOutput() {
     return this.game.getOutput();
+  }
+  isGameStarted() {
+    return this.game.isGameStarted();
   }
   setSlotSpinning(spinning) {
     this.game.setSlotSpinning(spinning);

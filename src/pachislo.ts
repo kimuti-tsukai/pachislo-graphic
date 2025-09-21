@@ -835,6 +835,10 @@ export class Game {
     return this.output;
   }
 
+  isGameStarted(): boolean {
+    return !GameState.isUninitialized(this.state);
+  }
+
   setSlotSpinning(spinning: boolean): void {
     const previousState = this.isSlotSpinning;
     this.isSlotSpinning = spinning;
@@ -894,6 +898,10 @@ export class WasmGame {
 
   getOutput(): UserOutput {
     return this.game.getOutput();
+  }
+
+  isGameStarted(): boolean {
+    return this.game.isGameStarted();
   }
 
   setSlotSpinning(spinning: boolean): void {
