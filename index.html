@@ -451,6 +451,8 @@
             return;
           }
 
+          console.log(`Player ${this.playerId} queue: ${this.queue}`);
+
           this.isProcessing = true;
           const task = this.queue.shift();
           console.log(`Player ${this.playerId} processing task: ${task.type}`);
