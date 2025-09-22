@@ -905,31 +905,33 @@
                 setTimeout(resolve, 300);
               }
             }, 100);
+            
+            // const timeOutTime = 10000;
 
-            // 最大10秒でタイムアウト
-            setTimeout(() => {
-              clearInterval(checkInterval);
-              console.warn(`Player ${this.playerId} slot animation timeout`);
+            // // 最大 timeOutTime ms でタイムアウト
+            // setTimeout(() => {
+            //   clearInterval(checkInterval);
+            //   console.warn(`Player ${this.playerId} slot animation timeout`);
 
-              // タイムアウト時もスロット回転状態をリセット
-              if (this.playerId === 1 && window.game1) {
-                window.game1.setSlotSpinning(false);
-                console.log(
-                  `Player ${this.playerId} slot spinning state reset (timeout)`,
-                );
-                // 状態表示を更新
-                this.updateState(this.playerId, window.game1.getState());
-              } else if (this.playerId === 2 && window.game2) {
-                window.game2.setSlotSpinning(false);
-                console.log(
-                  `Player ${this.playerId} slot spinning state reset (timeout)`,
-                );
-                // 状態表示を更新
-                this.updateState(this.playerId, window.game2.getState());
-              }
+            //   // タイムアウト時もスロット回転状態をリセット
+            //   if (this.playerId === 1 && window.game1) {
+            //     window.game1.setSlotSpinning(false);
+            //     console.log(
+            //       `Player ${this.playerId} slot spinning state reset (timeout)`,
+            //     );
+            //     // 状態表示を更新
+            //     this.updateState(this.playerId, window.game1.getState());
+            //   } else if (this.playerId === 2 && window.game2) {
+            //     window.game2.setSlotSpinning(false);
+            //     console.log(
+            //       `Player ${this.playerId} slot spinning state reset (timeout)`,
+            //     );
+            //     // 状態表示を更新
+            //     this.updateState(this.playerId, window.game2.getState());
+            //   }
 
-              resolve();
-            }, 10000);
+            //   resolve();
+            // }, timeOutTime);
           });
         }
 
