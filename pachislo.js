@@ -333,12 +333,16 @@ var SlotProducer = class {
     const choices = [
       ...this.choices
     ];
-    shuffleArray(choices);
-    return [
-      choices[0],
-      choices[1],
-      choices[0]
+    const choiceIndex = Math.floor(Math.random() * choices.length);
+    const shifted = (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) % choices.length;
+    console.log(`Choice index: ${choiceIndex}, Shifted index: ${shifted}`);
+    const result = [
+      choices[choiceIndex],
+      choices[shifted],
+      choices[choiceIndex]
     ];
+    console.log(`Fake lose result: ${result}`);
+    return result;
   }
   produce(lotteryResult) {
     switch (lotteryResult.type) {
@@ -694,6 +698,10 @@ var WasmGame = class {
     return this.game.isGameStarted();
   }
   setSlotSpinning(spinning) {
+    console.log(`Setting slot spinning state to ${spinning}`);
+    if (!spinning) {
+      console.trace();
+    }
     this.game.setSlotSpinning(spinning);
   }
   isSlotCurrentlySpinning() {

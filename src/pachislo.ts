@@ -444,7 +444,18 @@ export class SlotProducer {
     const shifted =
       (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) %
       choices.length;
-    return [choices[choiceIndex], choices[shifted], choices[choiceIndex]];
+
+    console.log(`Choice index: ${choiceIndex}, Shifted index: ${shifted}`);
+
+    const result = [
+      choices[choiceIndex],
+      choices[shifted],
+      choices[choiceIndex],
+    ];
+
+    console.log(`Fake lose result: ${result}`);
+
+    return result;
   }
 
   produce(lotteryResult: LotteryResultType): SlotOutput {
@@ -908,6 +919,10 @@ export class WasmGame {
   }
 
   setSlotSpinning(spinning: boolean): void {
+    console.log(`Setting slot spinning state to ${spinning}`);
+    if (!spinning) {
+      console.trace();
+    }
     this.game.setSlotSpinning(spinning);
   }
 
