@@ -2652,8 +2652,10 @@
             );
             return;
           }
+          
+          const timeToErase = 10000;
 
-          // 5秒後にボールを自動削除
+          // timeToErase ms 後にボールを自動削除
           setTimeout(() => {
             // bigBallが正常に作成されていることを確認
             if (bigBall) {
@@ -2671,7 +2673,7 @@
                 );
               }
             }
-          }, 7000);
+          }, timeToErase);
         }
 
         resetSimulation() {
