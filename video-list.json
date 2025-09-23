@@ -1,12 +1,15 @@
 {
   "background": [],
   "fakewin": [
+    "confiscation-smartphone-win.mov",
     "once-input-fakewin.mov"
   ],
   "win": [
+    "confiscation-smartphone-win.mov",
     "once-input-win.mov"
   ],
   "lose": [
+    "confiscation-smartphone-lose.mov",
     "once-input-lose.mov"
   ]
 }
