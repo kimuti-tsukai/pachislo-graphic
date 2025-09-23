@@ -411,6 +411,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
 
     <script type="module">
+      // グローバルビデオリストキャッシュ
+      let globalVideoList = null;
+
+      // video-list.jsonを事前に読み込む関数
+      async function preloadVideoList() {
+        try {
+          const response = await fetch("video-list.json");
+          if (response.ok) {
+            globalVideoList = await response.json();
+            console.log(
+              "📚 video-list.json preloaded successfully:",
+              globalVideoList,
+            );
+          } else {
+            console.error(
+              `❌ Failed to preload video-list.json: ${response.status}`,
+            );
+            globalVideoList = null;
+          }
+        } catch (error) {
+          console.error("💥 Error preloading video-list.json:", error);
+          globalVideoList = null;
+        }
+      }
+
       const REPEAT = 16; // 数字列を何回繰り返すか
       const numbers = [...Array(10).keys()].reverse(); // [9,8,7,6,5,4,3,2,1,0]
       const reels1 = Array.from(document.querySelectorAll("#slot1 .reel"));
@@ -603,56 +628,36 @@
 
         // フォルダからランダムに映像ファイルを選択（フォールバック付き）
         async selectRandomVideo(folderPath) {
+          console.log(
+            `🎯 Loading videos from cached JSON for folder: ${folderPath}`,
+          );
+
+          const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
+
+          // グローバルキャッシュから取得を試行
           let fallbackFiles = {};
+          if (globalVideoList) {
+            const videos = globalVideoList[folderName] || [];
 
-          try {
-            console.log(
-              `🎯 Loading videos from static JSON for folder: ${folderPath}`,
-            );
-
-            // Load video list from static JSON file
-            const response = await fetch("video-list.json");
-            if (response.ok) {
-              const videoList = await response.json();
-              const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
-              const videos = videoList[folderName] || [];
-
-              console.log(`🎬 Found ${videos.length} videos:`, videos);
-              if (videos.length > 0) {
-                const randomIndex = Math.floor(Math.random() * videos.length);
-                const selectedVideo = `${folderPath}/${videos[randomIndex]}`;
-                console.log(`✅ Selected video: ${selectedVideo}`);
-                return selectedVideo;
-              }
-
-              // Update fallbackFiles from video-list.json for fallback use
-              fallbackFiles = {
-                "images/win": videoList["win"] || [],
-                "images/fakewin": videoList["fakewin"] || [],
-                "images/lose": videoList["lose"] || [],
-              };
-            } else {
-              console.error(
-                `❌ Failed to load video-list.json: ${response.status}`,
-              );
-              // Static fallback files if JSON loading completely fails
-              fallbackFiles = {
-                "images/win": ["once-input-win.mov"],
-                "images/fakewin": ["once-input-fakewin.mov"],
-                "images/lose": ["once-input-lose.mov"],
-              };
+            console.log(`🎬 Found ${videos.length} videos:`, videos);
+            if (videos.length > 0) {
+              const randomIndex = Math.floor(Math.random() * videos.length);
+              const selectedVideo = `${folderPath}/${videos[randomIndex]}`;
+              console.log(`✅ Selected video: ${selectedVideo}`);
+              return selectedVideo;
             }
 
+            // Update fallbackFiles from cached video-list.json
+            fallbackFiles = {
+              "images/win": globalVideoList["win"] || [],
+              "images/fakewin": globalVideoList["fakewin"] || [],
+              "images/lose": globalVideoList["lose"] || [],
+            };
+          } else {
             console.warn(
-              `⚠️ JSON loading failed for ${folderPath}, using fallback`,
+              `⚠️ Global video list not available, using static fallback`,
             );
-          } catch (error) {
-            console.error(
-              `💥 JSON loading error for ${folderPath}, using fallback:`,
-              error.message,
-              error,
-            );
-            // Static fallback files if JSON loading completely fails
+            // Static fallback files if global video list is not available
             fallbackFiles = {
               "images/win": ["once-input-win.mov"],
               "images/fakewin": ["once-input-fakewin.mov"],
@@ -2098,6 +2103,9 @@
       }
 
       async function main() {
+        // video-list.jsonを事前に読み込み
+        await preloadVideoList();
+
         await init();
 
         let nails1 = [];
