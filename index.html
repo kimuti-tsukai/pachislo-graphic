@@ -1053,7 +1053,7 @@
         }
       }
 
-      const REPEAT = 16; // 数字列を何回繰り返すか
+      const REPEAT = 30; // 数字列を何回繰り返すか
       const numbers = [...Array(10).keys()].reverse(); // [9,8,7,6,5,4,3,2,1,0]
       const reels1 = Array.from(document.querySelectorAll("#slot1 .reel"));
       const reels2 = Array.from(document.querySelectorAll("#slot2 .reel"));
@@ -1778,8 +1778,21 @@
           const currentTransform = parseTransformY(list);
           const currentPosition = currentTransform / cellH;
 
-          // 最低3周以上回転（スロット風）
-          const minSpins = 3 + Math.floor(Math.random() * 2);
+          // より現実的な回転数計算（対数的増加）
+          // 基本3回転 + 対数的に増加する追加回転（最大15回転まで）
+          const baseSpins = 1; // 最低回転数
+          const timeBasedSpins = Math.floor(Math.log(duration / 100) * 2); // 対数的増加
+          const maxTimeBasedSpins = 15; // 最大追加回転数を制限
+          const actualTimeBasedSpins = Math.min(
+            Math.max(timeBasedSpins, 0),
+            maxTimeBasedSpins,
+          );
+          const randomSpins = Math.floor(Math.random() * 1.5); // ランダム要素
+          const minSpins = baseSpins + actualTimeBasedSpins + randomSpins;
+
+          console.log(
+            `Player ${isReel1 ? 1 : 2} reel ${idx}: duration=${duration}ms, spins=${minSpins} (base=${baseSpins}, time-based=${actualTimeBasedSpins}/${timeBasedSpins}, random=${randomSpins})`,
+          );
           const totalRotationCells = minSpins * numbers.length;
 
           const targetPositionInBlock = numbers.indexOf(targetNumber);
@@ -2132,14 +2145,180 @@
           });
           spinFunc(digits, durations);
         }, 12000);
+      };
+
+      // 回転時間と回転数の比例関係テスト
+      window.testRotationCountByDuration = (playerId = 1) => {
+        console.log(
+          `=== プレイヤー${playerId}の回転時間・回転数比例テスト ===`,
+        );
+        const spinFunc = playerId === 1 ? spinTo1 : spinTo2;
+
+        // テスト結果表示用の要素を作成
+        let testResultDiv = document.getElementById("rotation-test-results");
+        if (!testResultDiv) {
+          testResultDiv = document.createElement("div");
+          testResultDiv.id = "rotation-test-results";
+          testResultDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+          `;
+          document.body.appendChild(testResultDiv);
+        }
+        testResultDiv.innerHTML = `<h4>回転数テスト結果 (Player ${playerId})</h4>`;
+
+        const addResult = (duration, expectedSpins) => {
+          const resultLine = document.createElement("div");
+          resultLine.textContent = `${duration}ms → 約${expectedSpins}回転`;
+          testResultDiv.appendChild(resultLine);
+        };
+
+        // テスト1: 短時間（基本回転数）
+        setTimeout(() => {
+          const digits = [1, 2, 3];
+          const durations = [800, 800, 800]; // 短時間
+          const expectedSpins =
+            3 + Math.min(Math.max(Math.floor(Math.log(800 / 100) * 2), 0), 15);
+          addResult(800, expectedSpins);
+          console.log("短時間テスト（800ms）- 基本回転数で回転:", {
+            digits,
+            durations,
+            expectedSpins,
+          });
+          spinFunc(digits, durations);
+        }, 0);
+
+        // テスト2: 中時間（中程度の回転数）
+        setTimeout(() => {
+          const digits = [4, 5, 6];
+          const durations = [1500, 1500, 1500]; // 中時間
+          const expectedSpins =
+            3 + Math.min(Math.max(Math.floor(Math.log(1500 / 100) * 2), 0), 15);
+          addResult(1500, expectedSpins);
+          console.log("中時間テスト（1500ms）- 中程度の回転数で回転:", {
+            digits,
+            durations,
+            expectedSpins,
+          });
+          spinFunc(digits, durations);
+        }, 3000);
+
+        // テスト3: 長時間（多回転）
+        setTimeout(() => {
+          const digits = [7, 8, 9];
+          const durations = [2500, 2500, 2500]; // 長時間
+          const expectedSpins =
+            3 + Math.min(Math.max(Math.floor(Math.log(2500 / 100) * 2), 0), 15);
+          addResult(2500, expectedSpins);
+          console.log("長時間テスト（2500ms）- 多回転で回転:", {
+            digits,
+            durations,
+            expectedSpins,
+          });
+          spinFunc(digits, durations);
+        }, 6000);
+
+        // テスト4: 超長時間（最大回転）
+        setTimeout(() => {
+          const digits = [0, 1, 2];
+          const durations = [4000, 4000, 4000]; // 超長時間
+          const expectedSpins =
+            3 + Math.min(Math.max(Math.floor(Math.log(4000 / 100) * 2), 0), 15);
+          addResult(4000, expectedSpins);
+          console.log("超長時間テスト（4000ms）- 最大回転数で回転:", {
+            digits,
+            durations,
+            expectedSpins,
+          });
+          spinFunc(digits, durations);
+        }, 10000);
+
+        // テスト5: 超超長時間（15秒）
+        setTimeout(() => {
+          const digits = [5, 5, 5];
+          const durations = [15000, 15000, 15000]; // 超超長時間
+          const expectedSpins =
+            3 +
+            Math.min(Math.max(Math.floor(Math.log(15000 / 100) * 2), 0), 15);
+          addResult(15000, expectedSpins);
+          console.log("超超長時間テスト（15000ms）- 対数制限回転:", {
+            digits,
+            durations,
+            expectedSpins,
+          });
+          spinFunc(digits, durations);
+        }, 14000);
+
+        console.log("各テストの回転数の違いをコンソールログで確認してください");
+
+        // 20秒後にテスト結果表示を自動削除
+        setTimeout(() => {
+          if (testResultDiv && testResultDiv.parentNode) {
+            testResultDiv.parentNode.removeChild(testResultDiv);
+          }
+        }, 20000);
+      };
+
+      // 従来の数値指定テスト（testIndividualReelTimingの続き）
+      window.testBackwardCompatibility = (playerId = 1) => {
+        console.log(`=== プレイヤー${playerId}の後方互換性テスト ===`);
+        const spinFunc = playerId === 1 ? spinTo1 : spinTo2;
 
         // テストパターン5: 従来の数値指定（後方互換性確認）
         setTimeout(() => {
           const digits = [9, 8, 7];
           const duration = 2500; // 単一数値
-          console.log("パターン5 - 従来の数値指定:", { digits, duration });
+          console.log("従来の数値指定テスト:", { digits, duration });
           spinFunc(digits, duration);
-        }, 16000);
+        }, 0);
+      };
+
+      // 回転数計算の詳細を表示するヘルパー関数
+      window.showRotationFormula = () => {
+        let formulaDiv = document.getElementById("rotation-formula");
+        if (!formulaDiv) {
+          formulaDiv = document.createElement("div");
+          formulaDiv.id = "rotation-formula";
+          formulaDiv.style.cssText = `
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,100,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 11px;
+            max-width: 350px;
+            z-index: 1000;
+          `;
+          document.body.appendChild(formulaDiv);
+        }
+
+        formulaDiv.innerHTML = `
+          <h4>回転数計算式（対数的増加）</h4>
+          <p><strong>総回転数 = 基本回転数 + 時間ベース回転数 + ランダム回転数</strong></p>
+          <ul>
+            <li>基本回転数: 3回転（固定）</li>
+            <li>時間ベース回転数: Math.min(Math.floor(Math.log(duration/100) * 2), 15)</li>
+            <li>ランダム回転数: Math.floor(Math.random() * 1.5)</li>
+          </ul>
+          <p>例: 1500ms → 3 + Math.min(Math.floor(Math.log(15) * 2), 15) + 0~1 = 8~9回転</p>
+          <p>例: 15000ms → 3 + Math.min(Math.floor(Math.log(150) * 2), 15) + 0~1 = 13~14回転</p>
+          <button onclick="document.body.removeChild(document.getElementById('rotation-formula'))"
+                  style="margin-top:10px; padding:5px; background:white; border:none; border-radius:3px;">
+            閉じる
+          </button>
+        `;
       };
 
       // タスクキューのテスト関数
@@ -2652,7 +2831,7 @@
             );
             return;
           }
-          
+
           const timeToErase = 10000;
 
           // timeToErase ms 後にボールを自動削除
