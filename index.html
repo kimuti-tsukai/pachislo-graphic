@@ -42,7 +42,7 @@
       .right-panel {
         flex: 0 0 350px;
         height: 500px;
-        padding: 20px;
+        padding: 10px;
         position: relative;
         overflow: visible;
       }
@@ -1250,29 +1250,29 @@
 
             list.addEventListener("transitionend", handleTransitionEnd);
 
-            // フォールバックタイムアウト（イベントが発火しない場合の保険）
-            // 最大アニメーション時間を考慮して十分に長めに設定
-            const maxDuration =
-              spinDurations !== null &&
-              (Array.isArray(spinDurations) ||
-                typeof spinDurations === "number")
-                ? baseDuration +
-                  (reelArray.length - 1) * 100 +
-                  Math.random() * 100
-                : baseDuration +
-                  (reelArray.length - 1) * 400 +
-                  Math.random() * 200;
-            const fallbackTimeout = setTimeout(() => {
-              if (!isSpinCompleted) {
-                console.warn(
-                  `Player ${isReel1 ? 1 : 2} reel ${idx} fallback timeout triggered`,
-                );
-                list.removeEventListener("transitionend", handleTransitionEnd);
-                handleTransitionEnd({ propertyName: "transform" });
-              }
-            }, maxDuration + 1500);
+            // // フォールバックタイムアウト（イベントが発火しない場合の保険）
+            // // 最大アニメーション時間を考慮して十分に長めに設定
+            // const maxDuration =
+            //   spinDurations !== null &&
+            //   (Array.isArray(spinDurations) ||
+            //     typeof spinDurations === "number")
+            //     ? baseDuration +
+            //       (reelArray.length - 1) * 100 +
+            //       Math.random() * 100
+            //     : baseDuration +
+            //       (reelArray.length - 1) * 400 +
+            //       Math.random() * 200;
+            // const fallbackTimeout = setTimeout(() => {
+            //   if (!isSpinCompleted) {
+            //     console.warn(
+            //       `Player ${isReel1 ? 1 : 2} reel ${idx} fallback timeout triggered`,
+            //     );
+            //     list.removeEventListener("transitionend", handleTransitionEnd);
+            //     handleTransitionEnd({ propertyName: "transform" });
+            //   }
+            // }, maxDuration + 1500);
 
-            spinTimeouts.push(fallbackTimeout);
+            // spinTimeouts.push(fallbackTimeout);
           }, idx * 200);
         });
 
