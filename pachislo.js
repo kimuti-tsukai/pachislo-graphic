@@ -523,6 +523,7 @@ var Game = class {
     this.beforeState = null;
     this.state = GameState.Uninitialized();
     this.slotProducer = new SlotProducer(3, [
+      0,
       1,
       2,
       3,
@@ -698,10 +699,6 @@ var WasmGame = class {
     return this.game.isGameStarted();
   }
   setSlotSpinning(spinning) {
-    console.log(`Setting slot spinning state to ${spinning}`);
-    if (!spinning) {
-      console.trace();
-    }
     this.game.setSlotSpinning(spinning);
   }
   isSlotCurrentlySpinning() {

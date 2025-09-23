@@ -691,7 +691,7 @@ export class Game {
   private readonly config: BallsConfig;
   private readonly slotProducer = new SlotProducer(
     3,
-    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
   private isSlotSpinning = false;
 
@@ -919,10 +919,6 @@ export class WasmGame {
   }
 
   setSlotSpinning(spinning: boolean): void {
-    console.log(`Setting slot spinning state to ${spinning}`);
-    if (!spinning) {
-      console.trace();
-    }
     this.game.setSlotSpinning(spinning);
   }
 
