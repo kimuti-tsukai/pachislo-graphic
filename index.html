@@ -1492,7 +1492,7 @@
 
         // 指定時間だけスロットを回転
         async spinSlotForVideoDuration(slot, duration) {
-          duration += defaultDuration + 2 * defaultLag + 1500;
+          duration += defaultDuration + 2 * defaultLag - 1000;
 
           // スロット回転開始
           console.log(`P${this.playerId} Starting slot spin for ${duration}ms`);
