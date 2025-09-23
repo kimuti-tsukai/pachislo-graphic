@@ -334,7 +334,10 @@ var SlotProducer = class {
       ...this.choices
     ];
     const choiceIndex = Math.floor(Math.random() * choices.length);
-    const shifted = (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) % choices.length;
+    let shifted = (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) % choices.length;
+    if (shifted === choiceIndex) {
+      shifted = (shifted + 1) % choices.length;
+    }
     console.log(`Choice index: ${choiceIndex}, Shifted index: ${shifted}`);
     const result = [
       choices[choiceIndex],
@@ -523,7 +526,6 @@ var Game = class {
     this.beforeState = null;
     this.state = GameState.Uninitialized();
     this.slotProducer = new SlotProducer(3, [
-      0,
       1,
       2,
       3,
@@ -531,8 +533,7 @@ var Game = class {
       5,
       6,
       7,
-      8,
-      9
+      8
     ]);
     this.isSlotSpinning = false;
     config.validate();

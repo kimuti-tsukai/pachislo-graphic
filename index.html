@@ -204,7 +204,7 @@
 
       :root {
         --reel-width: 120px;
-        --cell-height: 64px; /* 1つの数字セルの高さ */
+        --cell-height: 80px; /* 1つの数字セルの高さ */
         --visible-cells: 3; /* 見えるセル数（中央＋上下の見切れ） */
       }
 
@@ -267,9 +267,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 32px;
-        font-weight: 700;
-        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cell img {
+        width: 90%;
+        height: 90%;
+        object-fit: contain;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
       }
 
       /* フェードエフェクトで上下をぼかす */
@@ -1058,7 +1065,7 @@
       }
 
       const REPEAT = 30; // 数字列を何回繰り返すか
-      const numbers = [...Array(10).keys()].reverse(); // [9,8,7,6,5,4,3,2,1,0]
+      const numbers = [1, 2, 3, 4, 5, 6, 7, 8]; // [1,2,3,4,5,6,7,8]
       const reels1 = Array.from(document.querySelectorAll("#slot1 .reel"));
       const reels2 = Array.from(document.querySelectorAll("#slot2 .reel"));
       const cellH =
@@ -1667,7 +1674,10 @@
           for (const n of numbers) {
             const div = document.createElement("div");
             div.className = "cell";
-            div.textContent = n;
+            const img = document.createElement("img");
+            img.src = `images/numbers/num${n}.png`;
+            img.alt = n.toString();
+            div.appendChild(img);
             list.appendChild(div);
           }
         }
@@ -1676,11 +1686,14 @@
         for (const n of numbers) {
           const div = document.createElement("div");
           div.className = "cell";
-          div.textContent = n;
+          const img = document.createElement("img");
+          img.src = `images/numbers/num${n}.png`;
+          img.alt = n.toString();
+          div.appendChild(img);
           list.appendChild(div);
         }
 
-        // 初期位置: 中央ブロックの最初（0）が見えるように設定（表示位置を2つ下に調整）
+        // 初期位置: 中央ブロックの最初（1）が見えるように設定（表示位置を2つ下に調整）
         const centerBlockStart = Math.floor(REPEAT / 2) * numbers.length;
         list.style.transform = `translateY(-${(centerBlockStart - 2) * cellH}px)`;
       }
@@ -1693,7 +1706,7 @@
         digits = normalizeDigits(digits);
         reelArray.forEach((reelEl, idx) => {
           const list = reelEl.querySelector(".reel-list");
-          const targetNumber = digits[idx] % 10;
+          const targetNumber = digits[idx];
 
           // 中央ブロックでの目標位置を計算（表示位置を2つ下に調整）
           const centerBlockStart = Math.floor(REPEAT / 2) * numbers.length;
@@ -1776,7 +1789,7 @@
             duration = baseDuration + extra;
           }
 
-          const targetNumber = digits[idx] % 10;
+          const targetNumber = digits[idx];
 
           // 現在位置を取得
           const currentTransform = parseTransformY(list);
@@ -1956,7 +1969,7 @@
         console.log("normalizeDigits", d);
         if (!Array.isArray(d)) throw new Error("配列で渡してください: [a,b,c]");
         if (d.length !== 3) throw new Error("要素数は3つ必要です");
-        return d.map((x) => Number(x) || 0).map((x) => ((x % 10) + 10) % 10);
+        return d.map((x) => Number(x) || 1).map((x) => ((x - 1) % 8) + 1);
       }
 
       // ユーティリティ: 現在のtranslateY値を取得
@@ -2075,9 +2088,9 @@
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             const digits = [
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
             ];
             console.log(`テスト ${i + 1}/${count}:`, digits);
             spinFunc(digits);
@@ -2091,14 +2104,14 @@
         for (let i = 0; i < count; i++) {
           setTimeout(() => {
             const digits1 = [
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
             ];
             const digits2 = [
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
-              Math.floor(Math.random() * 10),
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
+              Math.floor(Math.random() * 8) + 1,
             ];
             console.log(`両プレイヤーテスト ${i + 1}/${count}:`, {
               player1: digits1,
@@ -2233,7 +2246,7 @@
 
         // テスト4: 超長時間（最大回転）
         setTimeout(() => {
-          const digits = [0, 1, 2];
+          const digits = [8, 1, 2];
           const durations = [4000, 4000, 4000]; // 超長時間
           const expectedSpins =
             3 + Math.min(Math.max(Math.floor(Math.log(4000 / 100) * 2), 0), 15);
@@ -2279,7 +2292,7 @@
 
         // テストパターン5: 従来の数値指定（後方互換性確認）
         setTimeout(() => {
-          const digits = [9, 8, 7];
+          const digits = [8, 7, 6];
           const duration = 2500; // 単一数値
           console.log("従来の数値指定テスト:", { digits, duration });
           spinFunc(digits, duration);
@@ -2337,9 +2350,9 @@
 
         for (let i = 0; i < count; i++) {
           const digits = [
-            Math.floor(Math.random() * 10),
-            Math.floor(Math.random() * 10),
-            Math.floor(Math.random() * 10),
+            Math.floor(Math.random() * 8) + 1,
+            Math.floor(Math.random() * 8) + 1,
+            Math.floor(Math.random() * 8) + 1,
           ];
 
           // 抽選タスクを直接キューに追加
@@ -2416,7 +2429,7 @@
         );
       };
 
-      setDigitsBoth([0, 0, 0]);
+      setDigitsBoth([1, 1, 1]);
 
       import {
         init,

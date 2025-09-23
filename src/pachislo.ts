@@ -441,9 +441,16 @@ export class SlotProducer {
   private produceFakeLose(): SlotResult {
     const choices = [...this.choices];
     const choiceIndex = Math.floor(Math.random() * choices.length);
-    const shifted =
+
+    // For 1-8 range, ensure we get a different number for the middle position
+    let shifted =
       (choiceIndex + (Math.random() < 0.5 ? -1 : 1) + choices.length) %
       choices.length;
+
+    // Ensure shifted is different from choiceIndex for better fake lose effect
+    if (shifted === choiceIndex) {
+      shifted = (shifted + 1) % choices.length;
+    }
 
     console.log(`Choice index: ${choiceIndex}, Shifted index: ${shifted}`);
 
@@ -691,7 +698,7 @@ export class Game {
   private readonly config: BallsConfig;
   private readonly slotProducer = new SlotProducer(
     3,
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 2, 3, 4, 5, 6, 7, 8],
   );
   private isSlotSpinning = false;
 
