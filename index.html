@@ -1221,7 +1221,7 @@
               );
 
               // スロットをその長さだけ回転させる
-              await this.spinSlotForDuration(slot, videoDuration);
+              await this.spinSlotForVideoDuration(slot, videoDuration);
             } catch (videoError) {
               console.warn(
                 `P${this.playerId} Video playback failed:`,
@@ -1491,7 +1491,7 @@
         }
 
         // 指定時間だけスロットを回転
-        async spinSlotForDuration(slot, duration) {
+        async spinSlotForVideoDuration(slot, duration) {
           duration += defaultDuration + 2 * defaultLag + 1500;
 
           // スロット回転開始
