@@ -309,6 +309,229 @@
         pointer-events: none;
         z-index: 3;
       }
+
+      /* Configuration Modal Styles */
+      .config-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+      }
+
+      .config-modal.visible {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .config-content {
+        background-color: #222;
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        border: 2px solid #444;
+      }
+
+      .config-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #444;
+        padding-bottom: 15px;
+      }
+
+      .config-header h2 {
+        margin: 0;
+        color: #eee;
+        font-size: 24px;
+      }
+
+      .config-close {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .config-close:hover {
+        background: #c0392b;
+      }
+
+      .config-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+
+      .config-section {
+        background-color: #2a2a2a;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #444;
+      }
+
+      .config-section h3 {
+        margin: 0 0 15px 0;
+        color: #eee;
+        font-size: 18px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+      }
+
+      .nail-canvas-container {
+        position: relative;
+        border: 2px solid #444;
+        background-color: #2a2a2a;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .nail-canvas {
+        cursor: crosshair;
+      }
+
+      .nail-controls {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .nail-controls button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .nail-controls button:hover {
+        background: #2980b9;
+      }
+
+      .nail-controls button.danger {
+        background: #e74c3c;
+      }
+
+      .nail-controls button.danger:hover {
+        background: #c0392b;
+      }
+
+      .config-form {
+        display: grid;
+        gap: 15px;
+      }
+
+      .config-group {
+        display: grid;
+        gap: 10px;
+      }
+
+      .config-group label {
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+      }
+
+      .config-group input,
+      .config-group textarea {
+        background: #333;
+        border: 1px solid #555;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .config-group input:focus,
+      .config-group textarea:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+
+      .config-group textarea {
+        min-height: 120px;
+        font-family: monospace;
+        resize: vertical;
+      }
+
+      .data-controls {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .data-controls button {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      .data-controls button:hover {
+        background: #229954;
+      }
+
+      .data-controls button.load {
+        background: #f39c12;
+      }
+
+      .data-controls button.load:hover {
+        background: #e67e22;
+      }
+
+      .config-footer {
+        margin-top: 30px;
+        text-align: center;
+        border-top: 2px solid #444;
+        padding-top: 20px;
+      }
+
+      .apply-config {
+        background: #27ae60;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      .apply-config:hover {
+        background: #229954;
+      }
+
+      .config-instructions {
+        background: #34495e;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .config-instructions strong {
+        color: #3498db;
+      }
     </style>
   </head>
   <body>
@@ -404,6 +627,400 @@
             </div>
             <div class="center-frame"></div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Modal for Player 1 -->
+    <div id="config-modal-1" class="config-modal">
+      <div class="config-content">
+        <div class="config-header">
+          <h2>Player 1 Configuration</h2>
+          <button class="config-close" id="config-close-1">Close</button>
+        </div>
+
+        <div class="config-instructions">
+          <strong>Instructions:</strong> Click on the nail canvas to add/remove
+          nails. Edit configuration values below. Changes will be applied when
+          you close this modal.
+        </div>
+
+        <div class="config-main">
+          <!-- Nail Editor Section -->
+          <div class="config-section">
+            <h3>Nail Editor</h3>
+            <div class="nail-canvas-container">
+              <canvas
+                id="nail-canvas-1"
+                class="nail-canvas"
+                width="200"
+                height="400"
+              ></canvas>
+            </div>
+            <div class="nail-controls">
+              <button id="clear-nails-1">Clear All</button>
+              <button id="random-nails-1">Random Nails</button>
+              <button class="danger" id="remove-last-nail-1">
+                Remove Last
+              </button>
+            </div>
+
+            <div class="config-group">
+              <label>Nail Data (JSON format):</label>
+              <textarea
+                id="nail-data-1"
+                placeholder='[{"x": 50, "y": 100}, {"x": 150, "y": 200}]'
+              ></textarea>
+              <div class="data-controls">
+                <button id="export-nail-data-1">Export Data</button>
+                <button class="load" id="import-nail-data-1">
+                  Import Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Config Editor Section -->
+          <div class="config-section">
+            <h3>Game Configuration</h3>
+            <div class="config-form">
+              <div class="config-group">
+                <label>Initial Balls:</label>
+                <input
+                  type="number"
+                  id="config-init-balls-1"
+                  min="1"
+                  max="10000"
+                  value="1000"
+                />
+              </div>
+              <div class="config-group">
+                <label>Incremental Balls:</label>
+                <input
+                  type="number"
+                  id="config-incremental-balls-1"
+                  min="1"
+                  max="1000"
+                  value="15"
+                />
+              </div>
+              <div class="config-group">
+                <label>Incremental Rush:</label>
+                <input
+                  type="number"
+                  id="config-incremental-rush-1"
+                  min="1"
+                  max="1000"
+                  value="300"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Normal Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.16"
+                />
+              </div>
+              <div class="config-group">
+                <label>Normal Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-fake-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.3"
+                />
+              </div>
+              <div class="config-group">
+                <label>Normal Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-fake-lose-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.15"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Rush Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.48"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-fake-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.2"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-fake-lose-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.05"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Rush Continue Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.5"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Continue Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-fake-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.25"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Continue Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-fake-lose-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-footer">
+          <button class="apply-config" id="apply-config-1">
+            Apply Configuration
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Modal for Player 2 -->
+    <div id="config-modal-2" class="config-modal">
+      <div class="config-content">
+        <div class="config-header">
+          <h2>Player 2 Configuration</h2>
+          <button class="config-close" id="config-close-2">Close</button>
+        </div>
+
+        <div class="config-instructions">
+          <strong>Instructions:</strong> Click on the nail canvas to add/remove
+          nails. Edit configuration values below. Changes will be applied when
+          you close this modal.
+        </div>
+
+        <div class="config-main">
+          <!-- Nail Editor Section -->
+          <div class="config-section">
+            <h3>Nail Editor</h3>
+            <div class="nail-canvas-container">
+              <canvas
+                id="nail-canvas-2"
+                class="nail-canvas"
+                width="200"
+                height="400"
+              ></canvas>
+            </div>
+            <div class="nail-controls">
+              <button id="clear-nails-2">Clear All</button>
+              <button id="random-nails-2">Random Nails</button>
+              <button class="danger" id="remove-last-nail-2">
+                Remove Last
+              </button>
+            </div>
+
+            <div class="config-group">
+              <label>Nail Data (JSON format):</label>
+              <textarea
+                id="nail-data-2"
+                placeholder='[{"x": 50, "y": 100}, {"x": 150, "y": 200}]'
+              ></textarea>
+              <div class="data-controls">
+                <button id="export-nail-data-2">Export Data</button>
+                <button class="load" id="import-nail-data-2">
+                  Import Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Config Editor Section -->
+          <div class="config-section">
+            <h3>Game Configuration</h3>
+            <div class="config-form">
+              <div class="config-group">
+                <label>Initial Balls:</label>
+                <input
+                  type="number"
+                  id="config-init-balls-2"
+                  min="1"
+                  max="10000"
+                  value="1000"
+                />
+              </div>
+              <div class="config-group">
+                <label>Incremental Balls:</label>
+                <input
+                  type="number"
+                  id="config-incremental-balls-2"
+                  min="1"
+                  max="1000"
+                  value="15"
+                />
+              </div>
+              <div class="config-group">
+                <label>Incremental Rush:</label>
+                <input
+                  type="number"
+                  id="config-incremental-rush-2"
+                  min="1"
+                  max="1000"
+                  value="300"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Normal Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.16"
+                />
+              </div>
+              <div class="config-group">
+                <label>Normal Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-fake-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.3"
+                />
+              </div>
+              <div class="config-group">
+                <label>Normal Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-normal-fake-lose-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.15"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Rush Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.48"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-fake-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.2"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-fake-lose-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.05"
+                />
+              </div>
+
+              <div class="config-group">
+                <label>Rush Continue Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.8"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Continue Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-fake-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.25"
+                />
+              </div>
+              <div class="config-group">
+                <label>Rush Continue Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-rush-continue-fake-lose-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-footer">
+          <button class="apply-config" id="apply-config-2">
+            Apply Configuration
+          </button>
         </div>
       </div>
     </div>
@@ -2102,14 +2719,24 @@
         }
       }
 
+      // Global nail arrays
+      let nails1 = [];
+      let nails2 = [];
+
+      // Global configuration variables
+      let config1, config2;
+      let game1, game2;
+      let outputFunctions1, outputFunctions2;
+
       async function main() {
         // video-list.jsonを事前に読み込み
         await preloadVideoList();
 
         await init();
 
-        let nails1 = [];
-        let nails2 = [];
+        // Initialize nails arrays
+        nails1 = [];
+        nails2 = [];
 
         const nails_count = 100;
 
@@ -2214,7 +2841,7 @@
 
         const input2 = new JsInput();
 
-        const outputFunctions1 = {
+        outputFunctions1 = {
           default: (transition) => {
             taskQueue1.addTask("default", transition);
           },
@@ -2247,7 +2874,7 @@
           },
         };
 
-        const outputFunctions2 = {
+        outputFunctions2 = {
           default: (transition) => {
             taskQueue2.addTask("default", transition);
           },
@@ -2298,7 +2925,7 @@
           outputFunctions2.lotteryRushContinue,
         );
 
-        const config1 = new Config(
+        config1 = new Config(
           new BallsConfig(100, 15, 30),
           new Probability(
             new SlotProbability(0.16, 0.3, 0.15),
@@ -2310,7 +2937,7 @@
           ),
         );
 
-        const config2 = new Config(
+        config2 = new Config(
           new BallsConfig(1000, 15, 300),
           new Probability(
             new SlotProbability(0.16, 0.3, 0.15),
@@ -2353,7 +2980,7 @@
           return new WasmGame(newInput2, newOutput2, config2);
         };
 
-        const game1 = new PachinkoGame(
+        game1 = new PachinkoGame(
           "canvas1",
           1,
           "a",
@@ -2361,7 +2988,7 @@
           wasmGame1,
           recreateWasmGame1,
         );
-        const game2 = new PachinkoGame(
+        game2 = new PachinkoGame(
           "canvas2",
           2,
           "l",
@@ -2369,6 +2996,28 @@
           wasmGame2,
           recreateWasmGame2,
         );
+
+        // Add method to recreate physics with new nails to PachinkoGame class
+        PachinkoGame.prototype.recreatePhysicsWithNewNails = function () {
+          console.log(
+            `Recreating physics for player ${this.playerId} with new nails`,
+          );
+
+          // Remove old nails from world
+          this.nails.forEach((nail) => {
+            Composite.remove(this.world, nail);
+          });
+
+          // Create new nails
+          this.createNails();
+
+          // Add new nails to world
+          Composite.add(this.world, this.nails);
+
+          console.log(
+            `Physics recreated for player ${this.playerId} with ${this.nails.length} nails`,
+          );
+        };
 
         // グローバルアクセスのためwindowオブジェクトに設定（WasmGameインスタンス）
         window.game1 = wasmGame1;
@@ -2449,6 +3098,16 @@
             } else {
               console.log("プレイヤー2は既にゲーム開始済みです");
             }
+          }
+
+          // Configuration keys
+          if (key === "f") {
+            openConfigModal(1);
+            return;
+          }
+          if (key === "j") {
+            openConfigModal(2);
+            return;
           }
 
           // 通常のキー処理（ゲーム開始後のみ）
@@ -2577,10 +3236,10 @@
 
         console.log("🎮 デュアルパチンコゲーム準備完了！");
         console.log(
-          "プレイヤー1: Sキーでゲーム開始、Aキーで球を落とす (長押し対応 - 0.7秒間隔)",
+          "プレイヤー1: Sキーでゲーム開始、Aキーで球を落とす (長押し対応 - 0.7秒間隔), Fキーで設定画面",
         );
         console.log(
-          "プレイヤー2: Kキーでゲーム開始、Lキーで球を落とす (長押し対応 - 0.7秒間隔)",
+          "プレイヤー2: Kキーでゲーム開始、Lキーで球を落とす (長押し対応 - 0.7秒間隔), Jキーで設定画面",
         );
         console.log(
           "デバッグコマンド: window.debugKeyStates(), window.clearAllKeyStates()",
@@ -2612,7 +3271,475 @@
         toggleTimeSettings(playerId);
       }
 
-      main();
+      // Configuration System
+      let configCanvases = {};
+      let configNails = { 1: [], 2: [] };
+      let configContexts = {};
+
+      function initializeConfigSystem() {
+        // Initialize nail canvases
+        for (let playerId = 1; playerId <= 2; playerId++) {
+          const canvas = document.getElementById(`nail-canvas-${playerId}`);
+          const ctx = canvas.getContext("2d");
+          configCanvases[playerId] = canvas;
+          configContexts[playerId] = ctx;
+
+          // Scale canvas for crisp rendering
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = 200;
+          canvas.height = 400;
+          ctx.scale(1, 1);
+
+          // Add click event listener
+          canvas.addEventListener("click", (event) => {
+            handleNailCanvasClick(event, playerId);
+          });
+
+          // Initialize with current nails
+          if (playerId === 1) {
+            configNails[1] = [...nails1];
+          } else {
+            configNails[2] = [...nails2];
+          }
+        }
+
+        // Add event listeners for all buttons
+        for (let playerId = 1; playerId <= 2; playerId++) {
+          // Close button
+          document
+            .getElementById(`config-close-${playerId}`)
+            .addEventListener("click", () => {
+              closeConfigModal(playerId);
+            });
+
+          // Nail control buttons
+          document
+            .getElementById(`clear-nails-${playerId}`)
+            .addEventListener("click", () => {
+              clearAllNails(playerId);
+            });
+
+          document
+            .getElementById(`random-nails-${playerId}`)
+            .addEventListener("click", () => {
+              randomNails(playerId);
+            });
+
+          document
+            .getElementById(`remove-last-nail-${playerId}`)
+            .addEventListener("click", () => {
+              removeLastNail(playerId);
+            });
+
+          // Data control buttons
+          document
+            .getElementById(`export-nail-data-${playerId}`)
+            .addEventListener("click", () => {
+              exportNailData(playerId);
+            });
+
+          document
+            .getElementById(`import-nail-data-${playerId}`)
+            .addEventListener("click", () => {
+              importNailData(playerId);
+            });
+
+          // Apply configuration button
+          document
+            .getElementById(`apply-config-${playerId}`)
+            .addEventListener("click", () => {
+              applyConfig(playerId);
+            });
+
+          // Modal background click to close
+          const modal = document.getElementById(`config-modal-${playerId}`);
+          modal.addEventListener("click", (event) => {
+            if (event.target === modal) {
+              closeConfigModal(playerId);
+            }
+          });
+        }
+
+        // Keyboard event listeners
+        document.addEventListener("keydown", (event) => {
+          // ESC key to close any open modal
+          if (event.key === "Escape") {
+            for (let pid = 1; pid <= 2; pid++) {
+              const modal = document.getElementById(`config-modal-${pid}`);
+              if (modal.classList.contains("visible")) {
+                closeConfigModal(pid);
+              }
+            }
+          }
+        });
+      }
+
+      function openConfigModal(playerId) {
+        console.log(`Opening config modal for player ${playerId}`);
+
+        // Load current configuration values
+        loadCurrentConfig(playerId);
+
+        // Update nail canvas
+        updateNailCanvas(playerId);
+
+        // Show modal
+        const modal = document.getElementById(`config-modal-${playerId}`);
+        modal.classList.add("visible");
+
+        // Prevent body scroll
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeConfigModal(playerId) {
+        console.log(`Closing config modal for player ${playerId}`);
+
+        const modal = document.getElementById(`config-modal-${playerId}`);
+        modal.classList.remove("visible");
+
+        // Restore body scroll
+        document.body.style.overflow = "";
+      }
+
+      function loadCurrentConfig(playerId) {
+        // Get current config from game
+        const game = playerId === 1 ? game1 : game2;
+        const currentConfig = playerId === 1 ? config1 : config2;
+
+        // Load balls config
+        document.getElementById(`config-init-balls-${playerId}`).value =
+          currentConfig.balls.initBalls;
+        document.getElementById(`config-incremental-balls-${playerId}`).value =
+          currentConfig.balls.incrementalBalls;
+        document.getElementById(`config-incremental-rush-${playerId}`).value =
+          currentConfig.balls.incrementalRush;
+
+        // Load probability config
+        document.getElementById(`config-normal-win-${playerId}`).value =
+          currentConfig.probability.normal.win;
+        document.getElementById(`config-normal-fake-win-${playerId}`).value =
+          currentConfig.probability.normal.fakeWin;
+        document.getElementById(`config-normal-fake-lose-${playerId}`).value =
+          currentConfig.probability.normal.fakeLose;
+
+        document.getElementById(`config-rush-win-${playerId}`).value =
+          currentConfig.probability.rush.win;
+        document.getElementById(`config-rush-fake-win-${playerId}`).value =
+          currentConfig.probability.rush.fakeWin;
+        document.getElementById(`config-rush-fake-lose-${playerId}`).value =
+          currentConfig.probability.rush.fakeLose;
+
+        document.getElementById(`config-rush-continue-win-${playerId}`).value =
+          currentConfig.probability.rushContinue.win;
+        document.getElementById(
+          `config-rush-continue-fake-win-${playerId}`,
+        ).value = currentConfig.probability.rushContinue.fakeWin;
+        document.getElementById(
+          `config-rush-continue-fake-lose-${playerId}`,
+        ).value = currentConfig.probability.rushContinue.fakeLose;
+
+        // Load nail data
+        const currentNails = playerId === 1 ? nails1 : nails2;
+        configNails[playerId] = [...currentNails];
+        document.getElementById(`nail-data-${playerId}`).value = JSON.stringify(
+          currentNails,
+          null,
+          2,
+        );
+      }
+
+      function updateNailCanvas(playerId) {
+        const ctx = configContexts[playerId];
+        const canvas = configCanvases[playerId];
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw background
+        ctx.fillStyle = "#2a2a2a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw walls
+        ctx.fillStyle = "#444";
+        ctx.fillRect(0, 0, 15, canvas.height);
+        ctx.fillRect(canvas.width - 15, 0, 15, canvas.height);
+
+        // Draw nails
+        ctx.fillStyle = "#e74c3c";
+        ctx.strokeStyle = "#c0392b";
+        ctx.lineWidth = 0.5;
+
+        for (const nail of configNails[playerId]) {
+          const x = nail.x * (canvas.width / 200);
+          const y = nail.y * (canvas.height / 800);
+
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+
+      function handleNailCanvasClick(event, playerId) {
+        const canvas = configCanvases[playerId];
+        const rect = canvas.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 200;
+        const y = ((event.clientY - rect.top) / rect.height) * 800;
+
+        // Check if clicking near an existing nail (remove it)
+        let nailRemoved = false;
+        for (let i = configNails[playerId].length - 1; i >= 0; i--) {
+          const nail = configNails[playerId][i];
+          const distance = Math.sqrt((nail.x - x) ** 2 + (nail.y - y) ** 2);
+          if (distance < 10) {
+            configNails[playerId].splice(i, 1);
+            nailRemoved = true;
+            break;
+          }
+        }
+
+        // If no nail was removed, add a new one
+        if (!nailRemoved && x >= 20 && x <= 180 && y >= 50 && y <= 750) {
+          configNails[playerId].push({ x: x, y: y });
+        }
+
+        // Update canvas and data
+        updateNailCanvas(playerId);
+        updateNailData(playerId);
+      }
+
+      function updateNailData(playerId) {
+        document.getElementById(`nail-data-${playerId}`).value = JSON.stringify(
+          configNails[playerId],
+          null,
+          2,
+        );
+      }
+
+      function clearAllNails(playerId) {
+        configNails[playerId] = [];
+        updateNailCanvas(playerId);
+        updateNailData(playerId);
+      }
+
+      function randomNails(playerId) {
+        configNails[playerId] = [];
+        const nailCount = 80 + Math.floor(Math.random() * 40);
+
+        for (let i = 0; i < nailCount; i++) {
+          const x = 20 + Math.random() * 160;
+          const y = 100 + Math.random() * 600;
+          configNails[playerId].push({ x: x, y: y });
+        }
+
+        updateNailCanvas(playerId);
+        updateNailData(playerId);
+      }
+
+      function removeLastNail(playerId) {
+        if (configNails[playerId].length > 0) {
+          configNails[playerId].pop();
+          updateNailCanvas(playerId);
+          updateNailData(playerId);
+        }
+      }
+
+      function exportNailData(playerId) {
+        const data = JSON.stringify(configNails[playerId], null, 2);
+        document.getElementById(`nail-data-${playerId}`).value = data;
+
+        // Copy to clipboard
+        navigator.clipboard
+          .writeText(data)
+          .then(() => {
+            alert("Nail data copied to clipboard!");
+          })
+          .catch(() => {
+            alert("Nail data exported to text area");
+          });
+      }
+
+      function importNailData(playerId) {
+        const data = document.getElementById(`nail-data-${playerId}`).value;
+        try {
+          const nails = JSON.parse(data);
+          if (Array.isArray(nails)) {
+            configNails[playerId] = nails.filter(
+              (nail) =>
+                nail &&
+                typeof nail.x === "number" &&
+                typeof nail.y === "number",
+            );
+            updateNailCanvas(playerId);
+            updateNailData(playerId);
+            alert("Nail data imported successfully!");
+          } else {
+            alert(
+              "Invalid data format. Please provide an array of nail objects.",
+            );
+          }
+        } catch (error) {
+          alert("Invalid JSON format. Please check your data.");
+        }
+      }
+
+      async function applyConfig(playerId) {
+        try {
+          // Get configuration values
+          const initBalls = parseInt(
+            document.getElementById(`config-init-balls-${playerId}`).value,
+          );
+          const incrementalBalls = parseInt(
+            document.getElementById(`config-incremental-balls-${playerId}`)
+              .value,
+          );
+          const incrementalRush = parseInt(
+            document.getElementById(`config-incremental-rush-${playerId}`)
+              .value,
+          );
+
+          const normalWin = parseFloat(
+            document.getElementById(`config-normal-win-${playerId}`).value,
+          );
+          const normalFakeWin = parseFloat(
+            document.getElementById(`config-normal-fake-win-${playerId}`).value,
+          );
+          const normalFakeLose = parseFloat(
+            document.getElementById(`config-normal-fake-lose-${playerId}`)
+              .value,
+          );
+
+          const rushWin = parseFloat(
+            document.getElementById(`config-rush-win-${playerId}`).value,
+          );
+          const rushFakeWin = parseFloat(
+            document.getElementById(`config-rush-fake-win-${playerId}`).value,
+          );
+          const rushFakeLose = parseFloat(
+            document.getElementById(`config-rush-fake-lose-${playerId}`).value,
+          );
+
+          const rushContinueWin = parseFloat(
+            document.getElementById(`config-rush-continue-win-${playerId}`)
+              .value,
+          );
+          const rushContinueFakeWin = parseFloat(
+            document.getElementById(`config-rush-continue-fake-win-${playerId}`)
+              .value,
+          );
+          const rushContinueFakeLose = parseFloat(
+            document.getElementById(
+              `config-rush-continue-fake-lose-${playerId}`,
+            ).value,
+          );
+
+          // Apply nail configuration
+          if (playerId === 1) {
+            nails1 = [...configNails[1]];
+          } else {
+            nails2 = [...configNails[2]];
+          }
+
+          // Create new configuration
+          const newBallsConfig = new BallsConfig(
+            initBalls,
+            incrementalBalls,
+            incrementalRush,
+          );
+          const newProbability = new Probability(
+            new SlotProbability(normalWin, normalFakeWin, normalFakeLose),
+            new SlotProbability(rushWin, rushFakeWin, rushFakeLose),
+            new SlotProbability(
+              rushContinueWin,
+              rushContinueFakeWin,
+              rushContinueFakeLose,
+            ),
+            (n) => {
+              return 0.6 ** (n - 1);
+            },
+          );
+          const newConfig = new Config(newBallsConfig, newProbability);
+
+          // Update global config variables
+          if (playerId === 1) {
+            config1 = newConfig;
+          } else {
+            config2 = newConfig;
+          }
+
+          // Recreate the game instances with new configuration
+          console.log(`Applying new configuration for player ${playerId}`);
+
+          if (playerId === 1) {
+            // End current game if running
+            if (game1 && game1.wasmgame.isGameStarted()) {
+              await game1.endGame();
+            }
+
+            // Recreate WASM game with new config
+            const newInput1 = new JsInput();
+            const newOutput1 = new JsOutput(
+              outputFunctions1.default,
+              outputFunctions1.finishGame,
+              outputFunctions1.startGame,
+              outputFunctions1.lotteryNormal,
+              outputFunctions1.lotteryRush,
+              outputFunctions1.lotteryRushContinue,
+            );
+            window.game1 = new WasmGame(newInput1, newOutput1, newConfig);
+            game1.wasmgame = window.game1;
+
+            // Update physical game with new nails
+            game1.nails_index = nails1;
+            game1.recreatePhysicsWithNewNails();
+          } else {
+            // End current game if running
+            if (game2 && game2.wasmgame.isGameStarted()) {
+              await game2.endGame();
+            }
+
+            // Recreate WASM game with new config
+            const newInput2 = new JsInput();
+            const newOutput2 = new JsOutput(
+              outputFunctions2.default,
+              outputFunctions2.finishGame,
+              outputFunctions2.startGame,
+              outputFunctions2.lotteryNormal,
+              outputFunctions2.lotteryRush,
+              outputFunctions2.lotteryRushContinue,
+            );
+            window.game2 = new WasmGame(newInput2, newOutput2, newConfig);
+            game2.wasmgame = window.game2;
+
+            // Update physical game with new nails
+            game2.nails_index = nails2;
+            game2.recreatePhysicsWithNewNails();
+          }
+
+          console.log(
+            `Configuration applied successfully for player ${playerId}`,
+          );
+          alert(
+            `Player ${playerId} configuration applied! New game created with updated settings.`,
+          );
+
+          // Close the modal
+          closeConfigModal(playerId);
+        } catch (error) {
+          console.error(
+            `Error applying configuration for player ${playerId}:`,
+            error,
+          );
+          alert(`Error applying configuration: ${error.message}`);
+        }
+      }
+
+      main().then(() => {
+        // Initialize configuration system after main completes
+        setTimeout(() => {
+          initializeConfigSystem();
+        }, 100);
+      });
     </script>
   </body>
 </html>
