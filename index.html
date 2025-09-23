@@ -603,12 +603,7 @@
 
         // フォルダからランダムに映像ファイルを選択（フォールバック付き）
         async selectRandomVideo(folderPath) {
-          // Static fallback files for each folder
-          const fallbackFiles = {
-            "images/win": ["once-input-win.mov"],
-            "images/fakewin": ["once-input-fakewin.mov"],
-            "images/lose": ["once-input-lose.mov"],
-          };
+          let fallbackFiles = {};
 
           try {
             console.log(
@@ -629,10 +624,23 @@
                 console.log(`✅ Selected video: ${selectedVideo}`);
                 return selectedVideo;
               }
+
+              // Update fallbackFiles from video-list.json for fallback use
+              fallbackFiles = {
+                "images/win": videoList["win"] || [],
+                "images/fakewin": videoList["fakewin"] || [],
+                "images/lose": videoList["lose"] || [],
+              };
             } else {
               console.error(
                 `❌ Failed to load video-list.json: ${response.status}`,
               );
+              // Static fallback files if JSON loading completely fails
+              fallbackFiles = {
+                "images/win": ["once-input-win.mov"],
+                "images/fakewin": ["once-input-fakewin.mov"],
+                "images/lose": ["once-input-lose.mov"],
+              };
             }
 
             console.warn(
@@ -644,6 +652,12 @@
               error.message,
               error,
             );
+            // Static fallback files if JSON loading completely fails
+            fallbackFiles = {
+              "images/win": ["once-input-win.mov"],
+              "images/fakewin": ["once-input-fakewin.mov"],
+              "images/lose": ["once-input-lose.mov"],
+            };
           }
 
           // Use fallback files if API fails or returns empty
