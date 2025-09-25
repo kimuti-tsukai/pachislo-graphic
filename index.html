@@ -1429,6 +1429,9 @@
                 `Video loaded successfully: ${videoPath}, duration: ${duration}ms`,
               );
 
+              const playerId = this.playerId;
+              const stateElement = document.getElementById(`state${playerId}`);
+
               // 映像の準備完了を待つ
               const waitForCanPlay = () => {
                 return new Promise((resolve) => {
@@ -1456,6 +1459,9 @@
                       // 映像再生時に既存のvideoタグと入れ替え
                       originalVideo.style.display = "none";
                       rightPanel.appendChild(newVideo);
+
+                      // ステート要素を非表示に
+                      stateElement.hidden = true;
 
                       // DOM操作とブラウザレンダリングの完了を待ってから再生開始
                       requestAnimationFrame(() => {
@@ -1507,6 +1513,9 @@
                   console.log(
                     `Player ${this.playerId} video replaced back to original`,
                   );
+
+                  // ステート要素を表示に戻す
+                  stateElement.hidden = false;
                 } catch (error) {
                   console.warn(`Failed to restore video elements:`, error);
                 }
