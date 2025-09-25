@@ -3350,11 +3350,37 @@
           }
 
           // 通常のキー処理（ゲーム開始後のみ）
-          if (key === game1.keyBinding && game1.wasmgame.isGameStarted()) {
-            game1.handleKeyInput(game1.keyBinding);
+          if (key === game1.keyBinding) {
+            if (game1.wasmgame.isGameStarted()) {
+              game1.handleKeyInput(game1.keyBinding);
+            } else {
+              console.log(
+                `${game1.keyBinding}キーが押されました。game1.isGameStarted: ${game1.wasmgame.isGameStarted()}`,
+              );
+              if (!game1.wasmgame.isGameStarted()) {
+                console.log("プレイヤー1のゲームを開始します");
+                await game1.startWasmGame();
+                return;
+              } else {
+                console.log("プレイヤー1は既にゲーム開始済みです");
+              }
+            }
           }
-          if (key === game2.keyBinding && game2.wasmgame.isGameStarted()) {
-            game2.handleKeyInput(game2.keyBinding);
+          if (key === game2.keyBinding) {
+            if (game2.wasmgame.isGameStarted()) {
+              game2.handleKeyInput(game2.keyBinding);
+            } else {
+              console.log(
+                `${game2.keyBinding}キーが押されました。game2.isGameStarted: ${game2.wasmgame.isGameStarted()}`,
+              );
+              if (!game2.wasmgame.isGameStarted()) {
+                console.log("プレイヤー2のゲームを開始します");
+                await game2.startWasmGame();
+                return;
+              } else {
+                console.log("プレイヤー2は既にゲーム開始済みです");
+              }
+            }
           }
         }
 
