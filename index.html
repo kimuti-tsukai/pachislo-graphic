@@ -563,7 +563,10 @@
             <button onclick="toggleTimeSettings(1)">Close</button>
           </div>
           <video id="video1" autoplay muted loop playsinline>
-            <source src="images/background/background-normal.mp4" id="source1" />
+            <source
+              src="images/background/background-normal.mp4"
+              id="source1"
+            />
           </video>
         </div>
 
@@ -610,7 +613,10 @@
             <button onclick="toggleTimeSettings(2)">Close</button>
           </div>
           <video id="video2" autoplay muted loop playsinline>
-            <source src="images/background/background-normal.mp4" id="source2" />
+            <source
+              src="images/background/background-normal.mp4"
+              id="source2"
+            />
           </video>
         </div>
 
@@ -1334,7 +1340,7 @@
             );
             return;
           }
-          source.src = videoPath;
+          originalVideoSource.src = videoPath;
           await originalVideoSource.load();
         }
 
