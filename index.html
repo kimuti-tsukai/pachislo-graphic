@@ -1331,6 +1331,9 @@
         }
 
         async changeBackgroundVideo(videoPath) {
+          const originalVideo = document.getElementById(
+            `video${this.playerId}`,
+          );
           const originalVideoSource = document.getElementById(
             `source${this.playerId}`,
           );
@@ -1341,7 +1344,7 @@
             return;
           }
           originalVideoSource.src = videoPath;
-          await originalVideoSource.load();
+          await originalVideo.load();
         }
 
         // 新しいvideoタグを作成し既存タグと入れ替えて映像を再生
