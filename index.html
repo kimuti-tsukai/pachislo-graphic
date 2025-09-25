@@ -1461,7 +1461,7 @@
                       rightPanel.appendChild(newVideo);
 
                       // ステート要素を非表示に
-                      stateElement.hidden = true;
+                      stateElement.style.display = "none";
 
                       // DOM操作とブラウザレンダリングの完了を待ってから再生開始
                       requestAnimationFrame(() => {
@@ -1515,7 +1515,7 @@
                   );
 
                   // ステート要素を表示に戻す
-                  stateElement.hidden = false;
+                  stateElement.style.display = "";
                 } catch (error) {
                   console.warn(`Failed to restore video elements:`, error);
                 }
