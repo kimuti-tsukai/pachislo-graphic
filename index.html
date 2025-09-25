@@ -1147,8 +1147,26 @@
 
         // defaultタスクの実行
         executeDefaultTask(transition) {
+          const backgroundVideoPaths = {
+            normal: "images/background/background-normal.mp4",
+            rush: "images/background/background-rush.mp4",
+          };
+
           console.log(`P${this.playerId} Transition:`, transition);
           if (transition.after) {
+            if (transition.before) {
+              if (
+                transition.before.type === "Normal" &&
+                transition.after.type === "Rush"
+              ) {
+                this.changeBackgroundVideo(backgroundVideoPaths.rush);
+              } else if (
+                transition.before.type === "Rush" &&
+                transition.after.type === "Normal"
+              ) {
+                this.changeBackgroundVideo(backgroundVideoPaths.normal);
+              }
+            }
             this.updateState(this.playerId, transition.after);
           }
         }
@@ -1304,6 +1322,20 @@
 
           console.error(`❌ No fallback available for folder: ${folderPath}`);
           return null;
+        }
+
+        async changeBackgroundVideo(videoPath) {
+          const originalVideoSource = document.getElementById(
+            `source${this.playerId}`,
+          );
+          if (!originalVideoSource) {
+            console.error(
+              `❌ Source element not found for player ${this.playerId}`,
+            );
+            return;
+          }
+          source.src = videoPath;
+          await originalVideoSource.load();
         }
 
         // 新しいvideoタグを作成し既存タグと入れ替えて映像を再生
