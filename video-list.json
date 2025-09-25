@@ -1,15 +1,22 @@
 {
   "background": [],
   "fakewin": [
-    "confiscation-smartphone-win.mov",
+    "bottle-flip-win.mov",
+    "confiscation-smartphone-win.mp4",
+    "ebihara-win.mov",
     "once-input-fakewin.mov"
   ],
+  "numbers": [],
   "win": [
-    "confiscation-smartphone-win.mov",
+    "bottle-flip-win.mov",
+    "confiscation-smartphone-win.mp4",
+    "ebihara-win.mov",
     "once-input-win.mov"
   ],
   "lose": [
-    "confiscation-smartphone-lose.mov",
+    "bottle-flip-lose.mov",
+    "confiscation-smartphone-lose.mp4",
+    "ebihara-lose.mov",
     "once-input-lose.mov"
   ]
 }
