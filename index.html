@@ -191,6 +191,8 @@
         color: white;
         border-radius: 8px;
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.5);
+        font-size: 20px;
         font-weight: bold;
         position: absolute;
         top: 80px;
@@ -3062,11 +3064,11 @@
 
             switch (state.type) {
               case "Normal":
-                element.textContent = `通常モード - 球数: ${state.balls}${spinStatusText}`;
+                element.textContent = `球数: ${state.balls}${spinStatusText}`;
                 // rightPanel.style.backgroundColor = "black";
                 break;
               case "Rush":
-                element.textContent = `ラッシュモード - 球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}${spinStatusText}`;
+                element.textContent = `球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}${spinStatusText}`;
                 // rightPanel.style.backgroundColor = "white";
                 break;
               default:
@@ -3339,32 +3341,6 @@
 
         // 実際のキーアクション実行
         async function executeKeyAction(key) {
-          // スタートキーのチェック
-          if (key === "s") {
-            console.log(
-              `Sキーが押されました。game1.isGameStarted: ${game1.wasmgame.isGameStarted()}`,
-            );
-            if (!game1.wasmgame.isGameStarted()) {
-              console.log("プレイヤー1のゲームを開始します");
-              await game1.startWasmGame();
-              return;
-            } else {
-              console.log("プレイヤー1は既にゲーム開始済みです");
-            }
-          }
-          if (key === "k") {
-            console.log(
-              `Kキーが押されました。game2.isGameStarted: ${game2.wasmgame.isGameStarted()}`,
-            );
-            if (!game2.wasmgame.isGameStarted()) {
-              console.log("プレイヤー2のゲームを開始します");
-              await game2.startWasmGame();
-              return;
-            } else {
-              console.log("プレイヤー2は既にゲーム開始済みです");
-            }
-          }
-
           // Configuration keys
           if (key === "f") {
             openConfigModal(1);
@@ -3522,8 +3498,8 @@
         // 初期状態の表示を更新
         const element1 = document.getElementById("state1");
         const element2 = document.getElementById("state2");
-        if (element1) element1.textContent = "未開始 - Sキーでスタート";
-        if (element2) element2.textContent = "未開始 - Kキーでスタート";
+        if (element1) element1.textContent = "未開始 - Aキーでスタート";
+        if (element2) element2.textContent = "未開始 - Lキーでスタート";
 
         console.log("🎮 デュアルパチンコゲーム準備完了！");
         console.log(
