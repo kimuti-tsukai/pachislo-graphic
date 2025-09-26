@@ -1464,7 +1464,8 @@
 
                       // ステート要素を非表示に
                       stateElement.style.display = "none";
-                      slotWrap.style.transform = "translate(50px, -170px) scale(0.8)";
+                      slotWrap.style.transform =
+                        "translate(50px, -170px) scale(0.8)";
 
                       // DOM操作とブラウザレンダリングの完了を待ってから再生開始
                       requestAnimationFrame(() => {
@@ -3054,8 +3055,8 @@
             // ゲームが開始されているかチェック
             const game = playerId === 1 ? game1 : game2;
             if (!game.wasmgame.isGameStarted()) {
-              const startKey = playerId === 1 ? "S" : "K";
-              element.textContent = `未開始 - ${startKey}キーでスタート`;
+              const startKey = playerId === 1 ? "A" : "L";
+              element.textContent = `${startKey}キーでスタート`;
               return;
             }
 
@@ -3511,15 +3512,15 @@
         // 初期状態の表示を更新
         const element1 = document.getElementById("state1");
         const element2 = document.getElementById("state2");
-        if (element1) element1.textContent = "未開始 - Aキーでスタート";
-        if (element2) element2.textContent = "未開始 - Lキーでスタート";
+        if (element1) element1.textContent = "Aキーでスタート";
+        if (element2) element2.textContent = "Lキーでスタート";
 
         console.log("🎮 デュアルパチンコゲーム準備完了！");
         console.log(
-          "プレイヤー1: Sキーでゲーム開始、Aキーで球を落とす (長押し対応 - 0.7秒間隔), Fキーで設定画面",
+          "プレイヤー1: Aキーで球を落とす (長押し対応 - 0.7秒間隔), Fキーで設定画面",
         );
         console.log(
-          "プレイヤー2: Kキーでゲーム開始、Lキーで球を落とす (長押し対応 - 0.7秒間隔), Jキーで設定画面",
+          "プレイヤー2: 、Lキーで球を落とす (長押し対応 - 0.7秒間隔), Jキーで設定画面",
         );
         console.log(
           "デバッグコマンド: window.debugKeyStates(), window.clearAllKeyStates()",
