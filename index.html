@@ -3380,7 +3380,7 @@
           if (key === game1.keyBinding) {
             if (game1.wasmgame.isGameStarted()) {
               game1.handleKeyInput(game1.keyBinding);
-            } else {
+            } else if (!isProcessingFinishTask1) {
               console.log(
                 `${game1.keyBinding}キーが押されました。game1.isGameStarted: ${game1.wasmgame.isGameStarted()}`,
               );
@@ -3396,7 +3396,7 @@
           if (key === game2.keyBinding) {
             if (game2.wasmgame.isGameStarted()) {
               game2.handleKeyInput(game2.keyBinding);
-            } else {
+            } else if (!isProcessingFinishTask2) {
               console.log(
                 `${game2.keyBinding}キーが押されました。game2.isGameStarted: ${game2.wasmgame.isGameStarted()}`,
               );
