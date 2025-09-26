@@ -1178,6 +1178,11 @@
           ),
         ) || 64;
 
+      const backgroundVideoPaths = {
+        normal: "images/background/background-normal.mp4",
+        rush: "images/background/background-rush.mp4",
+      };
+
       let isProcessingFinishTask1 = false;
       let isProcessingFinishTask2 = false;
 
@@ -1271,11 +1276,6 @@
 
         // defaultタスクの実行
         executeDefaultTask(transition) {
-          const backgroundVideoPaths = {
-            normal: "images/background/background-normal.mp4",
-            rush: "images/background/background-rush.mp4",
-          };
-
           console.log(`P${this.playerId} Transition:`, transition);
           if (transition.after) {
             if (transition.before) {
@@ -1297,14 +1297,9 @@
 
         // finishGameタスクの実行
         executeFinishGameTask(gameState) {
-          setIsProcessingFinishTask(this.playerId, true);
           console.log(`P${this.playerId} Game Finished:`, gameState);
           this.updateState(this.playerId, gameState, "終了しました");
           this.changeBackgroundVideo(backgroundVideoPaths.normal);
-
-          setTimeout(() => {
-            setIsProcessingFinishTask(this.playerId, false);
-          }, 10000);
         }
 
         async executeNormalLotteryTask(data) {
@@ -2743,26 +2738,39 @@
         }
 
         async endGame() {
+          // 既にゲームが終了している、または終了処理中の場合は何もしない
           if (!this.wasmgame.isGameStarted()) {
             console.log(
-              `プレイヤー${this.playerId}: endGame()が呼ばれましたが、既にゲームは終了状態です`,
+              `プレイヤー${this.playerId}: endGame()が呼ばれましたが、既にゲームは終了済みです`,
             );
             return;
           }
 
-          console.log(`プレイヤー${this.playerId}: ゲーム終了！`);
-
-          // タイマーをクリア
-          if (this.gameTimer) {
-            clearTimeout(this.gameTimer);
-            this.gameTimer = null;
+          // プレイヤーに対応する isProcessingFinishTask を取得し、trueなら処理中なので中断
+          const isProcessing =
+            this.playerId === 1
+              ? isProcessingFinishTask1
+              : isProcessingFinishTask2;
+          if (isProcessing) {
+            console.log(
+              `プレイヤー${this.playerId}: 現在、終了処理のクールダウン中です。`,
+            );
+            return;
           }
 
-          // タイマー表示をクリア
-          if (this.displayTimer) {
-            clearInterval(this.displayTimer);
-            this.displayTimer = null;
-          }
+          console.log(
+            `プレイヤー${this.playerId}: ゲーム終了シーケンスを開始します。`,
+          );
+
+          // ◆ ステータスを即座に「終了処理中」に設定し、キー入力をブロック
+          setIsProcessingFinishTask(this.playerId, true);
+
+          // タイマー関連をクリア
+          if (this.gameTimer) clearTimeout(this.gameTimer);
+          if (this.displayTimer) clearInterval(this.displayTimer);
+          this.gameTimer = null;
+          this.displayTimer = null;
+          this.gameStartTime = null;
 
           // タイマー表示をリセット
           const timerDisplay = document.getElementById(
@@ -2775,37 +2783,52 @@
             timerDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
           }
 
-          // ゲーム開始時刻をリセット
-          this.gameStartTime = null;
-
-          // ゲーム終了処理
-          console.log(
-            `プレイヤー${this.playerId}: FinishGameコマンドを実行します`,
-          );
+          // ◆ UI更新のためにFinishGameコマンドをキューの最後に追加
           this.run_step_with_command("FinishGame");
 
-          // FinishGameコマンドの処理完了を待つ
-          console.log(
-            `プレイヤー${this.playerId}: ゲーム終了処理の完了を待機中...`,
-          );
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          // ◆ タスクキューが空になるのを監視する
+          const checkQueueInterval = setInterval(() => {
+            // プレイヤーに対応するタスクキューを取得
+            const taskQueue = this.playerId === 1 ? taskQueue1 : taskQueue2;
 
-          // 新しいWASMGameインスタンスを作成
-          console.log(
-            `プレイヤー${this.playerId}: 新しいWASMGameインスタンスを作成します`,
-          );
-          this.wasmgame = this.recreateWasmGame();
+            // キューが空で、かつ何も処理していない状態かチェック
+            if (
+              taskQueue &&
+              taskQueue.queue.length === 0 &&
+              !taskQueue.isProcessing
+            ) {
+              // ◆ 条件を満たしたら監視を停止
+              clearInterval(checkQueueInterval);
 
-          // windowオブジェクトも更新
-          if (this.playerId === 1) {
-            window.game1 = this.wasmgame;
-          } else if (this.playerId === 2) {
-            window.game2 = this.wasmgame;
-          }
+              console.log(
+                `プレイヤー${this.playerId}: 全てのタスクが完了しました。10秒間のクールダウンを開始します。`,
+              );
 
-          console.log(
-            `プレイヤー${this.playerId}: ゲーム終了処理完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
-          );
+              // ◆ ここから10秒のクールダウンタイマーを開始
+              setTimeout(() => {
+                console.log(
+                  `プレイヤー${this.playerId}: クールダウン終了。新しいゲームインスタンスを作成します。`,
+                );
+
+                // 新しいWASMGameインスタンスを作成
+                this.wasmgame = this.recreateWasmGame();
+
+                // windowオブジェクトも更新
+                if (this.playerId === 1) {
+                  window.game1 = this.wasmgame;
+                } else if (this.playerId === 2) {
+                  window.game2 = this.wasmgame;
+                }
+
+                // ◆ フラグを解除してキー入力を受け付けるようにする
+                setIsProcessingFinishTask(this.playerId, false);
+
+                console.log(
+                  `プレイヤー${this.playerId}: ゲームリセット完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
+                );
+              }, 10000); // 10秒のクールダウン
+            }
+          }, 200); // 200ミリ秒ごとにチェック
         }
 
         startTimerDisplay() {
@@ -3264,6 +3287,7 @@
             });
           },
           startGame: (state) => {
+            taskQueue1.changeBackgroundVideo(backgroundVideoPaths.normal);
             updateState(1, state);
           },
         };
@@ -3273,6 +3297,7 @@
             taskQueue2.addTask("default", transition);
           },
           finishGame: (gameState) => {
+            console.log("Finish game");
             setIsProcessingFinishTask(2, true);
             taskQueue2.addTask("finishGame", gameState);
           },
@@ -3305,6 +3330,7 @@
             });
           },
           startGame: (state) => {
+            taskQueue2.changeBackground(backgroundVideoPaths.normal);
             updateState(2, state);
           },
         };
@@ -3367,6 +3393,7 @@
             outputFunctions1.finishGame,
             outputFunctions1.startGame,
             outputFunctions1.lotteryNormal,
+            outputFunctions1.lotteryIntoRush,
             outputFunctions1.lotteryRush,
             outputFunctions1.lotteryRushContinue,
           );
@@ -3380,6 +3407,7 @@
             outputFunctions2.finishGame,
             outputFunctions2.startGame,
             outputFunctions2.lotteryNormal,
+            outputFunctions2.lotteryIntoRush,
             outputFunctions2.lotteryRush,
             outputFunctions2.lotteryRushContinue,
           );

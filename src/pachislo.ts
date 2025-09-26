@@ -740,15 +740,15 @@ export class Game {
   runStepWithCommand(command: CommandType | null): StepResult {
     this.beforeState = { ...this.state };
 
-    if (
-      command === Command.FinishGame ||
-      (command &&
-        typeof command === "object" &&
-        command.type === "FinishGame") ||
-      command === "FinishGame"
-    ) {
-      return "break";
-    }
+    // if (
+    //   command === Command.FinishGame ||
+    //   (command &&
+    //     typeof command === "object" &&
+    //     command.type === "FinishGame") ||
+    //   command === "FinishGame"
+    // ) {
+    //   return "break";
+    // }
 
     if (!command) {
       return "continue";
