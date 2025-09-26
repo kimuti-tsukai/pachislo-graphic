@@ -796,6 +796,40 @@
               </div>
 
               <div class="config-group">
+                <label>Into Rush Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.8"
+                />
+              </div>
+              <div class="config-group">
+                <label>Into Rush Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-fake-win-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+              <div class="config-group">
+                <label>Into Rush Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-fake-lose-1"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+
+              <div class="config-group">
                 <label>Rush Win Probability:</label>
                 <input
                   type="number"
@@ -993,6 +1027,40 @@
               </div>
 
               <div class="config-group">
+                <label>Into Rush Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.8"
+                />
+              </div>
+              <div class="config-group">
+                <label>Into Rush Fake Win Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-fake-win-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+              <div class="config-group">
+                <label>Into Rush Fake Lose Probability:</label>
+                <input
+                  type="number"
+                  id="config-into-rush-fake-lose-2"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value="0.1"
+                />
+              </div>
+
+              <div class="config-group">
                 <label>Rush Win Probability:</label>
                 <input
                   type="number"
@@ -1182,6 +1250,7 @@
               this.executeFinishGameTask(data);
               break;
             case "lotteryNormal":
+            case "lotteryIntoRush":
             case "lotteryRush":
             case "lotteryRushContinue":
               await this.executeLotteryTask(data);
@@ -3147,6 +3216,13 @@
               taskType: "Normal Lottery",
             });
           },
+          lotteryIntoRush: (lotteryResult, slotResult) => {
+            taskQueue1.addTask("lotteryIntoRush", {
+              lotteryResult,
+              slotResult,
+              taskType: "Into Rush Lottery",
+            });
+          },
           lotteryRush: (lotteryResult, slotResult) => {
             taskQueue1.addTask("lotteryRush", {
               lotteryResult,
@@ -3180,6 +3256,13 @@
               taskType: "Normal Lottery",
             });
           },
+          lotteryIntoRush: (lotteryResult, slotResult) => {
+            taskQueue2.addTask("lotteryIntoRush", {
+              lotteryResult,
+              slotResult,
+              taskType: "Into Rush Lottery",
+            });
+          },
           lotteryRush: (lotteryResult, slotResult) => {
             taskQueue2.addTask("lotteryRush", {
               lotteryResult,
@@ -3204,6 +3287,7 @@
           outputFunctions1.finishGame,
           outputFunctions1.startGame,
           outputFunctions1.lotteryNormal,
+          outputFunctions1.lotteryIntoRush,
           outputFunctions1.lotteryRush,
           outputFunctions1.lotteryRushContinue,
         );
@@ -3213,6 +3297,7 @@
           outputFunctions2.finishGame,
           outputFunctions2.startGame,
           outputFunctions2.lotteryNormal,
+          outputFunctions2.lotteryIntoRush,
           outputFunctions2.lotteryRush,
           outputFunctions2.lotteryRushContinue,
         );
@@ -3221,6 +3306,7 @@
           new BallsConfig(100, 15, 30),
           new Probability(
             new SlotProbability(0.16, 0.3, 0.15),
+            new SlotProbability(0.8, 0.3, 0.15),
             new SlotProbability(0.48, 0.2, 0.05),
             new SlotProbability(0.5, 0.25, 0.1),
             (n) => {
@@ -3233,6 +3319,7 @@
           new BallsConfig(100, 15, 30),
           new Probability(
             new SlotProbability(0.16, 0.3, 0.15),
+            new SlotProbability(0.8, 0.3, 0.15),
             new SlotProbability(0.48, 0.2, 0.05),
             new SlotProbability(0.5, 0.25, 0.1),
             (n) => {
@@ -3901,6 +3988,18 @@
               .value,
           );
 
+          const intoRushWin = parseFloat(
+            document.getElementById(`config-into-rush-win-${playerId}`).value,
+          );
+          const intoRushFakeWin = parseFloat(
+            document.getElementById(`config-into-rush-fake-win-${playerId}`)
+              .value,
+          );
+          const intoRushFakeLose = parseFloat(
+            document.getElementById(`config-into-rush-fake-lose-${playerId}`)
+              .value,
+          );
+
           const rushWin = parseFloat(
             document.getElementById(`config-rush-win-${playerId}`).value,
           );
@@ -3940,6 +4039,7 @@
           );
           const newProbability = new Probability(
             new SlotProbability(normalWin, normalFakeWin, normalFakeLose),
+            new SlotProbability(intoRushWin, intoRushFakeWin, intoRushFakeLose),
             new SlotProbability(rushWin, rushFakeWin, rushFakeLose),
             new SlotProbability(
               rushContinueWin,

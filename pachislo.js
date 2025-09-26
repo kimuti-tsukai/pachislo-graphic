@@ -49,11 +49,13 @@ var SlotProbability = class {
 };
 var Probability = class {
   normal;
+  intoRush;
   rush;
   rushContinue;
   rushContinueFn;
-  constructor(normal, rush, rushContinue, rushContinueFn) {
+  constructor(normal, intoRush, rush, rushContinue, rushContinueFn) {
     this.normal = normal;
+    this.intoRush = intoRush;
     this.rush = rush;
     this.rushContinue = rushContinue;
     this.rushContinueFn = rushContinueFn;
@@ -62,6 +64,13 @@ var Probability = class {
     const errors = [];
     try {
       this.normal.validate();
+    } catch (e) {
+      if (e instanceof ConfigError) {
+        errors.push(...e.errors);
+      }
+    }
+    try {
+      this.intoRush.validate();
     } catch (e) {
       if (e instanceof ConfigError) {
         errors.push(...e.errors);
@@ -265,6 +274,9 @@ var Lottery = class {
   }
   lotteryNormal() {
     return this.lottery(this.probability.normal);
+  }
+  lotteryIntoRush() {
+    return this.lottery(this.probability.intoRush);
   }
   lotteryRush() {
     return this.lottery(this.probability.rush);
@@ -475,10 +487,11 @@ var JsOutput = class extends UserOutput {
   finishGameFn;
   startGameFn;
   lotteryNormalFn;
+  lotteryIntoRushFn;
   lotteryRushFn;
   lotteryRushContinueFn;
-  constructor(defaultFn, finishGameFn, startGameFn, lotteryNormalFn, lotteryRushFn, lotteryRushContinueFn) {
-    super(), this.defaultFn = defaultFn, this.finishGameFn = finishGameFn, this.startGameFn = startGameFn, this.lotteryNormalFn = lotteryNormalFn, this.lotteryRushFn = lotteryRushFn, this.lotteryRushContinueFn = lotteryRushContinueFn;
+  constructor(defaultFn, finishGameFn, startGameFn, lotteryNormalFn, lotteryIntoRushFn, lotteryRushFn, lotteryRushContinueFn) {
+    super(), this.defaultFn = defaultFn, this.finishGameFn = finishGameFn, this.startGameFn = startGameFn, this.lotteryNormalFn = lotteryNormalFn, this.lotteryIntoRushFn = lotteryIntoRushFn, this.lotteryRushFn = lotteryRushFn, this.lotteryRushContinueFn = lotteryRushContinueFn;
   }
   default(transition) {
     if (this.defaultFn) {
@@ -498,6 +511,11 @@ var JsOutput = class extends UserOutput {
   lotteryNormal(result, slot) {
     if (this.lotteryNormalFn) {
       this.lotteryNormalFn(result, slot);
+    }
+  }
+  lotteryIntoRush(result, slot) {
+    if (this.lotteryIntoRushFn) {
+      this.lotteryIntoRushFn(result, slot);
     }
   }
   lotteryRush(result, slot) {
@@ -623,7 +641,14 @@ var Game = class {
       return;
     }
     if (this.state.type !== "Rush") {
-      this.state = GameState.triggerRush(this.state, this.config);
+      const intoRushResult = this.lottery.lotteryIntoRush();
+      const slotResult = this.slotProducer.produce(intoRushResult);
+      this.output.lotteryIntoRush(intoRushResult, slotResult);
+      if (LotteryResult.isWin(intoRushResult)) {
+        this.state = GameState.triggerRush(this.state, this.config);
+      } else {
+        this.state = GameState.incrementBalls(this.state, this.config);
+      }
       return;
     }
     try {
@@ -720,7 +745,7 @@ function init() {
   return Promise.resolve();
 }
 var START_HOLE_PROBABILITY_EXAMPLE = 0.12;
-var CONFIG_EXAMPLE = new Config(new BallsConfig(1e3, 15, 300), new Probability(new SlotProbability(0.16, 0.3, 0.15), new SlotProbability(0.48, 0.2, 0.05), new SlotProbability(0.8, 0.25, 0.1), (n) => Math.pow(0.6, n - 1)));
+var CONFIG_EXAMPLE = new Config(new BallsConfig(1e3, 15, 300), new Probability(new SlotProbability(0.16, 0.3, 0.15), new SlotProbability(0.48, 0.2, 0.05), new SlotProbability(0.48, 0.2, 0.05), new SlotProbability(0.8, 0.25, 0.1), (n) => Math.pow(0.6, n - 1)));
 var CLIInput = class extends UserInput {
   launchBallFlowProducer;
   commands = [];
@@ -786,6 +811,11 @@ var CLIOutput = class extends UserOutput {
     const [slotResult, but] = slot;
     this.printSlot(slotResult, but);
     this.log(`Lottery result: ${JSON.stringify(result)}`);
+  }
+  lotteryIntoRush(result, slot) {
+    const [slotResult, but] = slot;
+    this.printSlot(slotResult, but);
+    this.log(`Lottery result in into rush mode: ${JSON.stringify(result)}`);
   }
   lotteryRush(result, slot) {
     const [slotResult, but] = slot;

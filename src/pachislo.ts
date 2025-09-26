@@ -57,6 +57,7 @@ export type RushContinueFunction = (n: number) => number;
 export class Probability {
   constructor(
     public readonly normal: SlotProbability,
+    public readonly intoRush: SlotProbability,
     public readonly rush: SlotProbability,
     public readonly rushContinue: SlotProbability,
     public readonly rushContinueFn: RushContinueFunction,
@@ -66,6 +67,13 @@ export class Probability {
     const errors: string[] = [];
     try {
       this.normal.validate();
+    } catch (e) {
+      if (e instanceof ConfigError) {
+        errors.push(...e.errors);
+      }
+    }
+    try {
+      this.intoRush.validate();
     } catch (e) {
       if (e instanceof ConfigError) {
         errors.push(...e.errors);
@@ -354,6 +362,10 @@ export class Lottery {
     return this.lottery(this.probability.normal);
   }
 
+  lotteryIntoRush(): LotteryResultType {
+    return this.lottery(this.probability.intoRush);
+  }
+
   lotteryRush(): LotteryResultType {
     return this.lottery(this.probability.rush);
   }
@@ -596,6 +608,7 @@ export abstract class UserOutput {
   abstract finishGame(state: GameStateType): void;
   abstract startGame(state: GameStateType): void;
   abstract lotteryNormal(result: LotteryResultType, slot: SlotOutput): void;
+  abstract lotteryIntoRush(result: LotteryResultType, slot: SlotOutput): void;
   abstract lotteryRush(result: LotteryResultType, slot: SlotOutput): void;
   abstract lotteryRushContinue(
     result: LotteryResultType,
@@ -642,6 +655,7 @@ export class JsOutput extends UserOutput {
     private readonly finishGameFn: FinishGameFunction | null,
     private readonly startGameFn: StartGameFunction | null,
     private readonly lotteryNormalFn: LotteryFunction | null,
+    private readonly lotteryIntoRushFn: LotteryFunction | null,
     private readonly lotteryRushFn: LotteryFunction | null,
     private readonly lotteryRushContinueFn: LotteryFunction | null,
   ) {
@@ -669,6 +683,12 @@ export class JsOutput extends UserOutput {
   lotteryNormal(result: LotteryResultType, slot: SlotOutput): void {
     if (this.lotteryNormalFn) {
       this.lotteryNormalFn(result, slot);
+    }
+  }
+
+  lotteryIntoRush(result: LotteryResultType, slot: SlotOutput): void {
+    if (this.lotteryIntoRushFn) {
+      this.lotteryIntoRushFn(result, slot);
     }
   }
 
@@ -822,8 +842,18 @@ export class Game {
     }
 
     // When win the lottery
+
+    // When in normal mode
     if (this.state.type !== "Rush") {
-      this.state = GameState.triggerRush(this.state, this.config);
+      const intoRushResult = this.lottery.lotteryIntoRush();
+      const slotResult = this.slotProducer.produce(intoRushResult);
+      this.output.lotteryIntoRush(intoRushResult, slotResult);
+
+      if (LotteryResult.isWin(intoRushResult)) {
+        this.state = GameState.triggerRush(this.state, this.config);
+      } else {
+        this.state = GameState.incrementBalls(this.state, this.config);
+      }
       return;
     }
 
@@ -964,6 +994,7 @@ export const CONFIG_EXAMPLE = new Config(
   new BallsConfig(1000, 15, 300),
   new Probability(
     new SlotProbability(0.16, 0.3, 0.15), // normal
+    new SlotProbability(0.48, 0.2, 0.05), // into_rush
     new SlotProbability(0.48, 0.2, 0.05), // rush
     new SlotProbability(0.8, 0.25, 0.1), // rush_continue
     (n: number) => Math.pow(0.6, n - 1), // rush_continue_fn
@@ -1055,6 +1086,12 @@ export class CLIOutput extends UserOutput {
     const [slotResult, but] = slot;
     this.printSlot(slotResult, but);
     this.log(`Lottery result: ${JSON.stringify(result)}`);
+  }
+
+  lotteryIntoRush(result: LotteryResultType, slot: SlotOutput): void {
+    const [slotResult, but] = slot;
+    this.printSlot(slotResult, but);
+    this.log(`Lottery result in into rush mode: ${JSON.stringify(result)}`);
   }
 
   lotteryRush(result: LotteryResultType, slot: SlotOutput): void {
