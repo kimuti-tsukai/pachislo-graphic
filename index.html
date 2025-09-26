@@ -1250,10 +1250,16 @@
               this.executeFinishGameTask(data);
               break;
             case "lotteryNormal":
+              await this.executeNormalLotteryTask(data);
+              break;
             case "lotteryIntoRush":
+              await this.executeIntoRushLotteryTask(data);
+              break;
             case "lotteryRush":
+              await this.executeRushLotteryTask(data);
+              break;
             case "lotteryRushContinue":
-              await this.executeLotteryTask(data);
+              await this.executeRushContinueTask(data);
               break;
             default:
               console.warn(`Unknown task type: ${type}`);
@@ -1296,6 +1302,22 @@
           setTimeout(() => {
             setIsProcessingFinishTask(this.playerId, false);
           }, 5000);
+        }
+
+        async executeNormalLotteryTask(data) {
+          await this.executeLotteryTask(data);
+        }
+
+        async executeIntoRushLotteryTask(data) {
+          await this.executeLotteryTask(data);
+        }
+
+        async executeRushLotteryTask(data) {
+          await this.executeLotteryTask(data);
+        }
+
+        async executeRushContinueTask(data) {
+          await this.executeLotteryTask(data);
         }
 
         // 抽選タスクの実行（映像再生とスロット回転）
@@ -1365,7 +1387,10 @@
 
             try {
               // 映像を背景で再生し、長さを取得
-              const videoDuration = await this.playBackgroundVideo(videoFile);
+              const videoDuration = await this.playBackgroundVideo(
+                videoFile,
+                defaultDuration + 2 * defaultLag,
+              );
               console.log(
                 `P${this.playerId} Playing ${videoFile} for ${videoDuration}ms`,
               );
@@ -1463,7 +1488,7 @@
         }
 
         // 新しいvideoタグを作成し既存タグと入れ替えて映像を再生
-        async playBackgroundVideo(videoPath) {
+        async playBackgroundVideo(videoPath, withSleep = 0) {
           return new Promise((resolve, reject) => {
             const rightPanel = document.getElementById(
               `right-panel${this.playerId}`,
@@ -1542,31 +1567,28 @@
                   console.log(`Video ready for playback: ${videoPath}`);
 
                   // スロット開始のタイミングで映像を入れ替えて開始
-                  setTimeout(
-                    () => {
-                      // 映像再生時に既存のvideoタグと入れ替え
-                      originalVideo.style.display = "none";
-                      rightPanel.appendChild(newVideo);
+                  setTimeout(() => {
+                    // 映像再生時に既存のvideoタグと入れ替え
+                    originalVideo.style.display = "none";
+                    rightPanel.appendChild(newVideo);
 
-                      // ステート要素を非表示に
-                      stateElement.style.display = "none";
-                      slotWrap.style.transform =
-                        "translate(50px, -170px) scale(0.8)";
+                    // ステート要素を非表示に
+                    stateElement.style.display = "none";
+                    slotWrap.style.transform =
+                      "translate(50px, -170px) scale(0.8)";
 
-                      // DOM操作とブラウザレンダリングの完了を待ってから再生開始
+                    // DOM操作とブラウザレンダリングの完了を待ってから再生開始
+                    requestAnimationFrame(() => {
                       requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                          newVideo.currentTime = 0; // 再生位置を確実にリセット
-                          newVideo.play().catch((error) => {
-                            console.warn(
-                              `Failed to play video: ${error.message}`,
-                            );
-                          });
+                        newVideo.currentTime = 0; // 再生位置を確実にリセット
+                        newVideo.play().catch((error) => {
+                          console.warn(
+                            `Failed to play video: ${error.message}`,
+                          );
                         });
                       });
-                    },
-                    defaultDuration + 2 * defaultLag,
-                  );
+                    });
+                  }, withSleep);
                 })
                 .catch((error) => {
                   console.warn(`Video preparation failed: ${error.message}`);
