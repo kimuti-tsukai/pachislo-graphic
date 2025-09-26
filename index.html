@@ -1110,6 +1110,17 @@
           ),
         ) || 64;
 
+      let isProcessingFinishTask1 = false;
+      let isProcessingFinishTask2 = false;
+
+      function setIsProcessingFinishTask(playerId, isFinish) {
+        if (playerId === 1) {
+          isProcessingFinishTask1 = isFinish;
+        } else if (playerId === 2) {
+          isProcessingFinishTask2 = isFinish;
+        }
+      }
+
       // タスクキューシステム
       class OutputTaskQueue {
         constructor(playerId, updateStateFunction) {
@@ -1208,8 +1219,13 @@
 
         // finishGameタスクの実行
         executeFinishGameTask(gameState) {
+          setIsProcessingFinishTask(this.playerId, true);
           console.log(`P${this.playerId} Game Finished:`, gameState);
-          this.updateState(this.playerId, gameState);
+          this.updateState(this.playerId, gameState, "終了しました");
+
+          setTimeout(() => {
+            setIsProcessingFinishTask(this.playerId, false);
+          }, 5000);
         }
 
         // 抽選タスクの実行（映像再生とスロット回転）
@@ -3045,49 +3061,43 @@
         }
 
         // ゲーム状態を更新する関数
-        function updateState(playerId, state) {
-          console.log(`Player ${playerId} State Updated:`, state);
+        function updateState(playerId, state, withText = "") {
+          if (withText != "") {
+            console.log(
+              `Player ${playerId} State Updated:`,
+              state,
+              `with: ${withText}`,
+            );
+          } else {
+            console.log(`Player ${playerId} State Updated:`, state);
+          }
+
+          const textOfState = (state) => {
+            switch (state.type) {
+              case "Normal":
+                return `球数: ${state.balls}`;
+              case "Rush":
+                return `球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}`;
+              default:
+                return `未初期化`;
+            }
+          };
 
           const element = document.getElementById(`state${playerId}`);
           const rightPanel = document.getElementById(`right-panel${playerId}`);
+
+          const stateText = textOfState(state);
 
           if (element && rightPanel) {
             // ゲームが開始されているかチェック
             const game = playerId === 1 ? game1 : game2;
             if (!game.wasmgame.isGameStarted()) {
               const startKey = playerId === 1 ? "A" : "L";
-              element.textContent = `${startKey}キーでスタート`;
+              element.textContent = `終了しました\n結果: ${stateText}\n${startKey}キーでスタート`;
               return;
             }
 
-            // スロット回転状態を取得
-            const slotStatus = getSlotStatus(playerId);
-            const gameSpinningState =
-              playerId === 1
-                ? window.game1
-                  ? window.game1.isSlotCurrentlySpinning()
-                  : false
-                : window.game2
-                  ? window.game2.isSlotCurrentlySpinning()
-                  : false;
-
-            const spinStatusText =
-              (slotStatus && slotStatus.isSpinning) || gameSpinningState
-                ? ""
-                : "";
-
-            switch (state.type) {
-              case "Normal":
-                element.textContent = `球数: ${state.balls}${spinStatusText}`;
-                // rightPanel.style.backgroundColor = "black";
-                break;
-              case "Rush":
-                element.textContent = `球数: ${state.balls}, ラッシュ球: ${state.rushBalls}, 回数: ${state.n}${spinStatusText}`;
-                // rightPanel.style.backgroundColor = "white";
-                break;
-              default:
-                element.textContent = `未初期化${spinStatusText}`;
-            }
+            element.textContent = stateText;
           }
         }
 
