@@ -1222,6 +1222,7 @@
           setIsProcessingFinishTask(this.playerId, true);
           console.log(`P${this.playerId} Game Finished:`, gameState);
           this.updateState(this.playerId, gameState, "終了しました");
+          this.changeBackgroundVideo(backgroundVideoPaths.normal);
 
           setTimeout(() => {
             setIsProcessingFinishTask(this.playerId, false);
