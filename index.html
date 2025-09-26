@@ -1182,6 +1182,9 @@
       let isProcessingFinishTask2 = false;
 
       function setIsProcessingFinishTask(playerId, isFinish) {
+        console.log(
+          `Player ${playerId} isProcessingFinishTask set to ${isFinish}`,
+        );
         if (playerId === 1) {
           isProcessingFinishTask1 = isFinish;
         } else if (playerId === 2) {
@@ -1301,7 +1304,7 @@
 
           setTimeout(() => {
             setIsProcessingFinishTask(this.playerId, false);
-          }, 5000);
+          }, 10000);
         }
 
         async executeNormalLotteryTask(data) {
@@ -3229,6 +3232,7 @@
             taskQueue1.addTask("default", transition);
           },
           finishGame: (gameState) => {
+            setIsProcessingFinishTask(1, true);
             taskQueue1.addTask("finishGame", gameState);
           },
           lotteryNormal: (lotteryResult, slotResult) => {
@@ -3269,6 +3273,7 @@
             taskQueue2.addTask("default", transition);
           },
           finishGame: (gameState) => {
+            setIsProcessingFinishTask(2, true);
             taskQueue2.addTask("finishGame", gameState);
           },
           lotteryNormal: (lotteryResult, slotResult) => {
@@ -3487,9 +3492,15 @@
 
           // 通常のキー処理（ゲーム開始後のみ）
           if (key === game1.keyBinding) {
+            console.log(`isProcessingFinishTask1: ${isProcessingFinishTask1}`);
+
+            if (isProcessingFinishTask1) {
+              return;
+            }
+
             if (game1.wasmgame.isGameStarted()) {
               game1.handleKeyInput(game1.keyBinding);
-            } else if (!isProcessingFinishTask1) {
+            } else {
               console.log(
                 `${game1.keyBinding}キーが押されました。game1.isGameStarted: ${game1.wasmgame.isGameStarted()}`,
               );
@@ -3503,9 +3514,15 @@
             }
           }
           if (key === game2.keyBinding) {
+            console.log(`isProcessingFinishTask2: ${isProcessingFinishTask2}`);
+
+            if (isProcessingFinishTask2) {
+              return;
+            }
+
             if (game2.wasmgame.isGameStarted()) {
               game2.handleKeyInput(game2.keyBinding);
-            } else if (!isProcessingFinishTask2) {
+            } else {
               console.log(
                 `${game2.keyBinding}キーが押されました。game2.isGameStarted: ${game2.wasmgame.isGameStarted()}`,
               );
