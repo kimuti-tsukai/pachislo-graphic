@@ -3219,13 +3219,13 @@
         );
 
         config2 = new Config(
-          new BallsConfig(1000, 15, 300),
+          new BallsConfig(100, 15, 30),
           new Probability(
             new SlotProbability(0.16, 0.3, 0.15),
             new SlotProbability(0.48, 0.2, 0.05),
-            new SlotProbability(0.8, 0.25, 0.1),
+            new SlotProbability(0.5, 0.25, 0.1),
             (n) => {
-              return 0.6 ** (n - 1);
+              return 0.3 ** (n - 1);
             },
           ),
         );
