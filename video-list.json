@@ -7,6 +7,7 @@
     "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
     "ebihara-win.mp4",
+    "kurosawa-win.mp4",
     "once-input-fakewin.mov"
   ],
   "numbers": [],
@@ -14,12 +15,14 @@
     "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
     "ebihara-win.mp4",
+    "kurosawa-win.mp4",
     "once-input-win.mov"
   ],
   "lose": [
     "bottle-flip-lose.mp4",
     "confiscation-smartphone-lose.mp4",
     "ebihara-lose.mp4",
+    "kurosawa-lose.mp4",
     "once-input-lose.mov"
   ]
 }
