@@ -1,21 +1,25 @@
 {
+  "background": [
+    "background-normal.mp4",
+    "background-rush.mp4"
+  ],
   "fakewin": [
-    "bottle-flip-win.mov",
+    "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
-    "ebihara-win.mov",
+    "ebihara-win.mp4",
     "once-input-fakewin.mov"
   ],
   "numbers": [],
   "win": [
-    "bottle-flip-win.mov",
+    "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
-    "ebihara-win.mov",
+    "ebihara-win.mp4",
     "once-input-win.mov"
   ],
   "lose": [
-    "bottle-flip-lose.mov",
+    "bottle-flip-lose.mp4",
     "confiscation-smartphone-lose.mp4",
-    "ebihara-lose.mov",
+    "ebihara-lose.mp4",
     "once-input-lose.mov"
   ]
 }
