@@ -7,22 +7,43 @@
     "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
     "ebihara-win.mp4",
+    "hegedas-win.mp4",
+    "hujitani-win.mp4",
+    "kainuma-win.mp4",
     "kurosawa-win.mp4",
-    "once-input-fakewin.mov"
+    "satojun-win.mp4",
+    "sugawara-win.mp4"
   ],
-  "numbers": [],
   "win": [
     "bottle-flip-win.mp4",
     "confiscation-smartphone-win.mp4",
     "ebihara-win.mp4",
+    "hegedas-win.mp4",
+    "kainuma-win.mp4",
     "kurosawa-win.mp4",
-    "once-input-win.mov"
+    "satojun-win.mp4",
+    "sugawara-win.mp4"
   ],
   "lose": [
     "bottle-flip-lose.mp4",
     "confiscation-smartphone-lose.mp4",
     "ebihara-lose.mp4",
+    "fujitani-lose.mp4",
+    "hegedas-lose.mp4",
+    "kainuma-lose.mp4",
     "kurosawa-lose.mp4",
-    "once-input-lose.mov"
-  ]
+    "satojun-lose.mp4",
+    "sugawara-lose.mp4"
+  ],
+  "into-rush": {
+    "fakewin": [
+      "oga-win.mp4"
+    ],
+    "win": [
+      "oga-win.mp4"
+    ],
+    "lose": [
+      "oga-lose.mp4"
+    ]
+  }
 }
