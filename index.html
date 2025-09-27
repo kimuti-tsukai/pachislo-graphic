@@ -911,7 +911,9 @@
               </div>
             </div>
             <div class="data-controls">
-              <button class="reset" id="reset-config-1">Restore default settings</button>
+              <button class="reset" id="reset-config-1">
+                Restore default settings
+              </button>
             </div>
           </div>
         </div>
@@ -1150,7 +1152,9 @@
               </div>
             </div>
             <div class="data-controls">
-              <button class="reset" id="reset-config-2">Restore default settings</button>
+              <button class="reset" id="reset-config-2">
+                Restore default settings
+              </button>
             </div>
           </div>
         </div>
@@ -4298,9 +4302,17 @@
 
           // Update global config variables
           if (playerId === 1) {
+            localStorage.setItem(
+              "storageConfig1",
+              JSON.stringify(newObjectConfig),
+            );
             objectConfig1 = newObjectConfig;
             config1 = newConfig;
           } else {
+            localStorage.setItem(
+              "storageConfig2",
+              JSON.stringify(newObjectConfig),
+            );
             objectConfig2 = newObjectConfig;
             config2 = newConfig;
           }
@@ -4389,54 +4401,86 @@
         rushContinueWin: 0.5,
         rushContinueFakeWin: 0.25,
         rushContinueFakeLose: 0.1,
-        rushContinueExpression: "0.3 ^ (n - 1)"
+        rushContinueExpression: "0.3 ^ (n - 1)",
       };
 
       // Function to reset configuration to default values
       function resetConfigToDefaults(playerId) {
-        if (!confirm(`プレイヤー${playerId}の設定を初期設定に戻しますか？現在の設定は失われます。`)) {
+        if (
+          !confirm(
+            `プレイヤー${playerId}の設定を初期設定に戻しますか？現在の設定は失われます。`,
+          )
+        ) {
           return;
         }
 
         try {
           // Reset form values to defaults
-          document.getElementById(`config-init-balls-${playerId}`).value = defaultConfigValues.initBalls;
-          document.getElementById(`config-incremental-balls-${playerId}`).value = defaultConfigValues.incrementalBalls;
-          document.getElementById(`config-incremental-rush-${playerId}`).value = defaultConfigValues.incrementalRush;
-          
-          document.getElementById(`config-normal-win-${playerId}`).value = defaultConfigValues.normalWin;
-          document.getElementById(`config-normal-fake-win-${playerId}`).value = defaultConfigValues.normalFakeWin;
-          document.getElementById(`config-normal-fake-lose-${playerId}`).value = defaultConfigValues.normalFakeLose;
-          
-          document.getElementById(`config-into-rush-win-${playerId}`).value = defaultConfigValues.intoRushWin;
-          document.getElementById(`config-into-rush-fake-win-${playerId}`).value = defaultConfigValues.intoRushFakeWin;
-          document.getElementById(`config-into-rush-fake-lose-${playerId}`).value = defaultConfigValues.intoRushFakeLose;
-          
-          document.getElementById(`config-rush-win-${playerId}`).value = defaultConfigValues.rushWin;
-          document.getElementById(`config-rush-fake-win-${playerId}`).value = defaultConfigValues.rushFakeWin;
-          document.getElementById(`config-rush-fake-lose-${playerId}`).value = defaultConfigValues.rushFakeLose;
-          
-          document.getElementById(`config-rush-continue-win-${playerId}`).value = defaultConfigValues.rushContinueWin;
-          document.getElementById(`config-rush-continue-fake-win-${playerId}`).value = defaultConfigValues.rushContinueFakeWin;
-          document.getElementById(`config-rush-continue-fake-lose-${playerId}`).value = defaultConfigValues.rushContinueFakeLose;
-          
-          document.getElementById(`config-rush-continue-win-expression-${playerId}`).value = defaultConfigValues.rushContinueExpression;
-          
+          document.getElementById(`config-init-balls-${playerId}`).value =
+            defaultConfigValues.initBalls;
+          document.getElementById(
+            `config-incremental-balls-${playerId}`,
+          ).value = defaultConfigValues.incrementalBalls;
+          document.getElementById(`config-incremental-rush-${playerId}`).value =
+            defaultConfigValues.incrementalRush;
+
+          document.getElementById(`config-normal-win-${playerId}`).value =
+            defaultConfigValues.normalWin;
+          document.getElementById(`config-normal-fake-win-${playerId}`).value =
+            defaultConfigValues.normalFakeWin;
+          document.getElementById(`config-normal-fake-lose-${playerId}`).value =
+            defaultConfigValues.normalFakeLose;
+
+          document.getElementById(`config-into-rush-win-${playerId}`).value =
+            defaultConfigValues.intoRushWin;
+          document.getElementById(
+            `config-into-rush-fake-win-${playerId}`,
+          ).value = defaultConfigValues.intoRushFakeWin;
+          document.getElementById(
+            `config-into-rush-fake-lose-${playerId}`,
+          ).value = defaultConfigValues.intoRushFakeLose;
+
+          document.getElementById(`config-rush-win-${playerId}`).value =
+            defaultConfigValues.rushWin;
+          document.getElementById(`config-rush-fake-win-${playerId}`).value =
+            defaultConfigValues.rushFakeWin;
+          document.getElementById(`config-rush-fake-lose-${playerId}`).value =
+            defaultConfigValues.rushFakeLose;
+
+          document.getElementById(
+            `config-rush-continue-win-${playerId}`,
+          ).value = defaultConfigValues.rushContinueWin;
+          document.getElementById(
+            `config-rush-continue-fake-win-${playerId}`,
+          ).value = defaultConfigValues.rushContinueFakeWin;
+          document.getElementById(
+            `config-rush-continue-fake-lose-${playerId}`,
+          ).value = defaultConfigValues.rushContinueFakeLose;
+
+          document.getElementById(
+            `config-rush-continue-win-expression-${playerId}`,
+          ).value = defaultConfigValues.rushContinueExpression;
+
           // Reset nails to empty (default is no nails)
           if (playerId === 1) {
             nails1 = [];
           } else {
             nails2 = [];
           }
-          
+
           // Update nail canvas and textarea
           updateNailCanvas(playerId);
           document.getElementById(`nail-data-${playerId}`).value = "[]";
-          
+
           console.log(`プレイヤー${playerId}の設定を初期設定に戻しました`);
-          alert(`プレイヤー${playerId}の設定を初期設定に戻しました。\n「Apply Configuration」ボタンを押して設定を適用してください。`);
+          alert(
+            `プレイヤー${playerId}の設定を初期設定に戻しました。\n「Apply Configuration」ボタンを押して設定を適用してください。`,
+          );
         } catch (error) {
-          console.error(`Error resetting config for player ${playerId}:`, error);
+          console.error(
+            `Error resetting config for player ${playerId}:`,
+            error,
+          );
           alert(`設定のリセット中にエラーが発生しました: ${error.message}`);
         }
       }
@@ -4445,15 +4489,19 @@
         // Initialize configuration system after main completes
         setTimeout(() => {
           initializeConfigSystem();
-          
+
           // Add event listeners for reset buttons
-          document.getElementById('reset-config-1').addEventListener('click', () => {
-            resetConfigToDefaults(1);
-          });
-          
-          document.getElementById('reset-config-2').addEventListener('click', () => {
-            resetConfigToDefaults(2);
-          });
+          document
+            .getElementById("reset-config-1")
+            .addEventListener("click", () => {
+              resetConfigToDefaults(1);
+            });
+
+          document
+            .getElementById("reset-config-2")
+            .addEventListener("click", () => {
+              resetConfigToDefaults(2);
+            });
         }, 100);
       });
     </script>
