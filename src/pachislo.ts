@@ -14,12 +14,34 @@ export class ConfigError extends Error {
   }
 }
 
+type BallsConfigObject = {
+  initBalls: number;
+  incrementalBalls: number;
+  incrementalRush: number;
+};
+
+type SlotConfigObject = {
+  win: number;
+  fakeWin: number;
+  fakeLose: number;
+};
+
 export class BallsConfig {
   constructor(
     public readonly initBalls: number,
     public readonly incrementalBalls: number,
     public readonly incrementalRush: number,
   ) {}
+
+  public static fromObject(
+    obj: BallsConfigObject,
+  ): BallsConfig {
+    return new BallsConfig(
+      obj.initBalls,
+      obj.incrementalBalls,
+      obj.incrementalRush,
+    );
+  }
 
   validate(): void {
     const errors: string[] = [];
@@ -36,6 +58,16 @@ export class SlotProbability {
     public readonly fakeWin: number,
     public readonly fakeLose: number,
   ) {}
+
+  public static fromObject(
+    obj: SlotConfigObject,
+  ): SlotProbability {
+    return new SlotProbability(
+      obj.win,
+      obj.fakeWin,
+      obj.fakeLose,
+    );
+  }
 
   validate(): void {
     const errors: string[] = [];

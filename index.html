@@ -896,6 +896,11 @@
                   value="0.1"
                 />
               </div>
+
+              <div class="config-group">
+                <label>Expression of Rush Continue Win Probability:</label>
+                <input type="text" id="config-rush-continue-win-expression-1" />
+              </div>
             </div>
           </div>
         </div>
@@ -1127,6 +1132,11 @@
                   value="0.1"
                 />
               </div>
+
+              <div class="config-group">
+                <label>Expression of Rush Continue Win Probability:</label>
+                <input type="text" id="config-rush-continue-win-expression-2" />
+              </div>
             </div>
           </div>
         </div>
@@ -1140,6 +1150,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+    <script src="https://unpkg.com/mathjs@14.8.1/lib/browser/math.js"></script>
 
     <script type="module">
       // グローバルビデオリストキャッシュ
@@ -1331,30 +1342,62 @@
 
           // 抽選結果に基づいて映像フォルダを決定
           let videoFolder = "";
+          let isIntoRush = taskType === "Into Rush Lottery";
           console.log(
             `P${this.playerId} Lottery result structure:`,
             lotteryResult,
           );
+          console.log(`P${this.playerId} Is Into Rush lottery: ${isIntoRush}`);
 
           // Handle different possible lottery result formats
           if (lotteryResult.Win !== undefined) {
             // Rust-style enum format: { Win: "Default" } or { Win: "FakeWin" }
-            videoFolder =
-              lotteryResult.Win === "Default" ? "images/win" : "images/fakewin";
+            if (isIntoRush) {
+              videoFolder =
+                lotteryResult.Win === "Default"
+                  ? "images/into-rush/win"
+                  : "images/into-rush/fakewin";
+            } else {
+              videoFolder =
+                lotteryResult.Win === "Default"
+                  ? "images/win"
+                  : "images/fakewin";
+            }
           } else if (lotteryResult.Lose !== undefined) {
             // Rust-style enum format: { Lose: "Default" } or { Lose: "FakeLose" }
-            videoFolder =
-              lotteryResult.Lose === "FakeLose" ? "images/lose" : "";
+            if (isIntoRush) {
+              videoFolder =
+                lotteryResult.Lose === "FakeLose"
+                  ? "images/into-rush/lose"
+                  : "";
+            } else {
+              videoFolder =
+                lotteryResult.Lose === "FakeLose" ? "images/lose" : "";
+            }
           } else if (lotteryResult.type === "Win") {
             // JavaScript-style format: { type: "Win", winType: "Default" }
-            videoFolder =
-              lotteryResult.winType === "Default"
-                ? "images/win"
-                : "images/fakewin";
+            if (isIntoRush) {
+              videoFolder =
+                lotteryResult.winType === "Default"
+                  ? "images/into-rush/win"
+                  : "images/into-rush/fakewin";
+            } else {
+              videoFolder =
+                lotteryResult.winType === "Default"
+                  ? "images/win"
+                  : "images/fakewin";
+            }
           } else if (lotteryResult.type === "Lose") {
             // JavaScript-style format: { type: "Lose", loseType: "Default" }
-            videoFolder =
-              lotteryResult.loseType === "FakeLose" ? "images/lose" : "";
+            if (isIntoRush) {
+              videoFolder =
+                lotteryResult.loseType === "FakeLose"
+                  ? "images/into-rush/lose"
+                  : "";
+            } else {
+              videoFolder =
+                lotteryResult.loseType === "FakeLose" ? "images/lose" : "";
+            }
           }
 
           console.log(
@@ -2632,6 +2675,28 @@
         JsOutput,
       } from "./pachislo.js";
 
+      Probability.fromJsonObject = function (jsonObject) {
+        return new Probability(
+          SlotProbability.fromObject(jsonObject.normal),
+          SlotProbability.fromObject(jsonObject.intoRush),
+          SlotProbability.fromObject(jsonObject.rush),
+          SlotProbability.fromObject(jsonObject.rushContinue),
+          (n) => {
+            const result = math.evaluate(jsonObject.rushContinueFn, { n: n });
+            console.log(`Rush Continue Fn: n=${n}, result=${result}`);
+            return result;
+          },
+        );
+      };
+
+      Config.fromJsonObject = function (jsonObject) {
+        console.log(jsonObject);
+        return new Config(
+          BallsConfig.fromObject(jsonObject.balls),
+          Probability.fromJsonObject(jsonObject.probability),
+        );
+      };
+
       // Matter.jsの主要モジュールを取得
       const {
         Engine,
@@ -2737,7 +2802,7 @@
           );
         }
 
-        async endGame() {
+        async endGame(withTimeout = true) {
           // 既にゲームが終了している、または終了処理中の場合は何もしない
           if (!this.wasmgame.isGameStarted()) {
             console.log(
@@ -2805,28 +2870,31 @@
               );
 
               // ◆ ここから10秒のクールダウンタイマーを開始
-              setTimeout(() => {
-                console.log(
-                  `プレイヤー${this.playerId}: クールダウン終了。新しいゲームインスタンスを作成します。`,
-                );
+              setTimeout(
+                () => {
+                  console.log(
+                    `プレイヤー${this.playerId}: クールダウン終了。新しいゲームインスタンスを作成します。`,
+                  );
 
-                // 新しいWASMGameインスタンスを作成
-                this.wasmgame = this.recreateWasmGame();
+                  // 新しいWASMGameインスタンスを作成
+                  this.wasmgame = this.recreateWasmGame();
 
-                // windowオブジェクトも更新
-                if (this.playerId === 1) {
-                  window.game1 = this.wasmgame;
-                } else if (this.playerId === 2) {
-                  window.game2 = this.wasmgame;
-                }
+                  // windowオブジェクトも更新
+                  if (this.playerId === 1) {
+                    window.game1 = this.wasmgame;
+                  } else if (this.playerId === 2) {
+                    window.game2 = this.wasmgame;
+                  }
 
-                // ◆ フラグを解除してキー入力を受け付けるようにする
-                setIsProcessingFinishTask(this.playerId, false);
+                  // ◆ フラグを解除してキー入力を受け付けるようにする
+                  setIsProcessingFinishTask(this.playerId, false);
 
-                console.log(
-                  `プレイヤー${this.playerId}: ゲームリセット完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
-                );
-              }, 10000); // 10秒のクールダウン
+                  console.log(
+                    `プレイヤー${this.playerId}: ゲームリセット完了。isGameStarted: ${this.wasmgame.isGameStarted()}`,
+                  );
+                },
+                withTimeout ? 10000 : 0,
+              ); // 10秒のクールダウン
             }
           }, 200); // 200ミリ秒ごとにチェック
         }
@@ -3140,6 +3208,7 @@
 
       // Global configuration variables
       let config1, config2;
+      let objectConfig1, objectConfig2;
       let game1, game2;
       let outputFunctions1, outputFunctions2;
 
@@ -3355,31 +3424,91 @@
           outputFunctions2.lotteryRushContinue,
         );
 
-        config1 = new Config(
-          new BallsConfig(100, 15, 30),
-          new Probability(
-            new SlotProbability(0.16, 0.3, 0.15),
-            new SlotProbability(0.8, 0.3, 0.15),
-            new SlotProbability(0.48, 0.2, 0.05),
-            new SlotProbability(0.5, 0.25, 0.1),
-            (n) => {
-              return 0.3 ** (n - 1);
-            },
-          ),
+        function parseJsonOrNull(input) {
+          return input === null ? null : JSON.parse(input);
+        }
+
+        const storageConfig1 = parseJsonOrNull(
+          localStorage.getItem("storageConfig1"),
         );
 
-        config2 = new Config(
-          new BallsConfig(100, 15, 30),
-          new Probability(
-            new SlotProbability(0.16, 0.3, 0.15),
-            new SlotProbability(0.8, 0.3, 0.15),
-            new SlotProbability(0.48, 0.2, 0.05),
-            new SlotProbability(0.5, 0.25, 0.1),
-            (n) => {
-              return 0.3 ** (n - 1);
+        if (storageConfig1) {
+          objectConfig1 = storageConfig1;
+        } else {
+          objectConfig1 = {
+            balls: {
+              initBalls: 100,
+              incrementalBalls: 15,
+              incrementalRush: 30,
             },
-          ),
+            probability: {
+              normal: {
+                win: 0.16,
+                fakeWin: 0.3,
+                fakeLose: 0.15,
+              },
+              intoRush: {
+                win: 0.8,
+                fakeWin: 0.3,
+                fakeLose: 0.15,
+              },
+              rush: {
+                win: 0.48,
+                fakeWin: 0.2,
+                fakeLose: 0.05,
+              },
+              rushContinue: {
+                win: 0.5,
+                fakeWin: 0.25,
+                fakeLose: 0.1,
+              },
+              rushContinueFn: "0.3 ^ (n - 1)",
+            },
+          };
+        }
+
+        config1 = Config.fromJsonObject(objectConfig1);
+
+        const storageConfig2 = parseJsonOrNull(
+          localStorage.getItem("storageConfig2"),
         );
+
+        if (storageConfig2) {
+          objectConfig2 = storageConfig2;
+        } else {
+          objectConfig2 = {
+            balls: {
+              initBalls: 100,
+              incrementalBalls: 15,
+              incrementalRush: 30,
+            },
+            probability: {
+              normal: {
+                win: 0.16,
+                fakeWin: 0.3,
+                fakeLose: 0.15,
+              },
+              intoRush: {
+                win: 0.8,
+                fakeWin: 0.3,
+                fakeLose: 0.15,
+              },
+              rush: {
+                win: 0.48,
+                fakeWin: 0.2,
+                fakeLose: 0.05,
+              },
+              rushContinue: {
+                win: 0.5,
+                fakeWin: 0.25,
+                fakeLose: 0.1,
+              },
+              rushContinueFn: "0.3 ^ (n - 1)",
+            },
+          };
+        }
+
+        config2 = Config.fromJsonObject(objectConfig2);
 
         // 2つのゲームインスタンスを作成
         const wasmGame1 = new WasmGame(input1, output1, config1);
@@ -3850,7 +3979,9 @@
       function loadCurrentConfig(playerId) {
         // Get current config from game
         const game = playerId === 1 ? game1 : game2;
-        const currentConfig = playerId === 1 ? config1 : config2;
+        const currentConfig = playerId === 1 ? objectConfig1 : objectConfig2;
+
+        console.log("currentConfig:", currentConfig);
 
         // Load balls config
         document.getElementById(`config-init-balls-${playerId}`).value =
@@ -3868,6 +3999,14 @@
         document.getElementById(`config-normal-fake-lose-${playerId}`).value =
           currentConfig.probability.normal.fakeLose;
 
+        document.getElementById(`config-into-rush-win-${playerId}`).value =
+          currentConfig.probability.intoRush.win;
+        document.getElementById(`config-into-rush-fake-win-${playerId}`).value =
+          currentConfig.probability.intoRush.fakeWin;
+        document.getElementById(
+          `config-into-rush-fake-lose-${playerId}`,
+        ).value = currentConfig.probability.intoRush.fakeLose;
+
         document.getElementById(`config-rush-win-${playerId}`).value =
           currentConfig.probability.rush.win;
         document.getElementById(`config-rush-fake-win-${playerId}`).value =
@@ -3883,6 +4022,12 @@
         document.getElementById(
           `config-rush-continue-fake-lose-${playerId}`,
         ).value = currentConfig.probability.rushContinue.fakeLose;
+
+        document.getElementById(
+          `config-rush-continue-win-expression-${playerId}`,
+        ).value = currentConfig.probability.rushContinueFn;
+
+        document.get;
 
         // Load nail data
         const currentNails = playerId === 1 ? nails1 : nails2;
@@ -4091,6 +4236,10 @@
             ).value,
           );
 
+          const rushContinueFn = document.getElementById(
+            `config-rush-continue-win-expression-${playerId}`,
+          ).value;
+
           // Apply nail configuration
           if (playerId === 1) {
             nails1 = [...configNails[1]];
@@ -4098,31 +4247,47 @@
             nails2 = [...configNails[2]];
           }
 
-          // Create new configuration
-          const newBallsConfig = new BallsConfig(
-            initBalls,
-            incrementalBalls,
-            incrementalRush,
-          );
-          const newProbability = new Probability(
-            new SlotProbability(normalWin, normalFakeWin, normalFakeLose),
-            new SlotProbability(intoRushWin, intoRushFakeWin, intoRushFakeLose),
-            new SlotProbability(rushWin, rushFakeWin, rushFakeLose),
-            new SlotProbability(
-              rushContinueWin,
-              rushContinueFakeWin,
-              rushContinueFakeLose,
-            ),
-            (n) => {
-              return 0.6 ** (n - 1);
+          const newObjectConfig = {
+            balls: {
+              initBalls: initBalls,
+              incrementalBalls: incrementalBalls,
+              incrementalRush: incrementalRush,
             },
-          );
-          const newConfig = new Config(newBallsConfig, newProbability);
+            probability: {
+              normal: {
+                win: normalWin,
+                fakeWin: normalFakeWin,
+                fakeLose: normalFakeLose,
+              },
+              intoRush: {
+                win: intoRushWin,
+                fakeWin: intoRushFakeWin,
+                fakeLose: intoRushFakeLose,
+              },
+              rush: {
+                win: rushWin,
+                fakeWin: rushFakeWin,
+                fakeLose: rushFakeLose,
+              },
+              rushContinue: {
+                win: rushContinueWin,
+                fakeWin: rushContinueFakeWin,
+                fakeLose: rushContinueFakeLose,
+              },
+              rushContinueFn: rushContinueFn,
+            },
+          };
+
+          // Create new configuration
+
+          const newConfig = new Config.fromJsonObject(newObjectConfig);
 
           // Update global config variables
           if (playerId === 1) {
+            objectConfig1 = newObjectConfig;
             config1 = newConfig;
           } else {
+            objectConfig2 = newObjectConfig;
             config2 = newConfig;
           }
 
@@ -4132,7 +4297,7 @@
           if (playerId === 1) {
             // End current game if running
             if (game1 && game1.wasmgame.isGameStarted()) {
-              await game1.endGame();
+              await game1.endGame(false);
             }
 
             // Recreate WASM game with new config

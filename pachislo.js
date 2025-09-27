@@ -7,7 +7,7 @@ var ConfigError = class extends Error {
     this.errors = errors;
   }
 };
-var BallsConfig = class {
+var BallsConfig = class _BallsConfig {
   initBalls;
   incrementalBalls;
   incrementalRush;
@@ -15,6 +15,9 @@ var BallsConfig = class {
     this.initBalls = initBalls;
     this.incrementalBalls = incrementalBalls;
     this.incrementalRush = incrementalRush;
+  }
+  static fromObject(obj) {
+    return new _BallsConfig(obj.initBalls, obj.incrementalBalls, obj.incrementalRush);
   }
   validate() {
     const errors = [];
@@ -24,7 +27,7 @@ var BallsConfig = class {
     if (errors.length > 0) throw new ConfigError(errors);
   }
 };
-var SlotProbability = class {
+var SlotProbability = class _SlotProbability {
   win;
   fakeWin;
   fakeLose;
@@ -32,6 +35,9 @@ var SlotProbability = class {
     this.win = win;
     this.fakeWin = fakeWin;
     this.fakeLose = fakeLose;
+  }
+  static fromObject(obj) {
+    return new _SlotProbability(obj.win, obj.fakeWin, obj.fakeLose);
   }
   validate() {
     const errors = [];

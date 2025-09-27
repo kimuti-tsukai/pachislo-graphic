@@ -1,9 +1,13 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:esbuild@0.19.5": "0.19.5"
+    "npm:esbuild@0.19.5": "0.19.5",
+    "npm:mathjs@14.8.1": "14.8.1"
   },
   "npm": {
+    "@babel/runtime@7.28.4": {
+      "integrity": "sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ=="
+    },
     "@esbuild/android-arm64@0.19.5": {
       "integrity": "sha512-5d1OkoJxnYQfmC+Zd8NBFjkhyCNYwM4n9ODrycTFY6Jk1IGiZ+tjVJDDSwDt77nK+tfpGP4T50iMtVi4dEGzhQ==",
       "os": ["android"],
@@ -114,6 +118,12 @@
       "os": ["win32"],
       "cpu": ["x64"]
     },
+    "complex.js@2.4.2": {
+      "integrity": "sha512-qtx7HRhPGSCBtGiST4/WGHuW+zeaND/6Ld+db6PbrulIB1i2Ev/2UPiqcmpQNPSyfBKraC0EOvOKCB5dGZKt3g=="
+    },
+    "decimal.js@10.6.0": {
+      "integrity": "sha512-YpgQiITW3JXGntzdUmyUR1V812Hn8T1YVXhCu+wO3OpS4eU9l4YdD3qjyiKdV6mvV29zapkMeD390UVEf2lkUg=="
+    },
     "esbuild@0.19.5": {
       "integrity": "sha512-bUxalY7b1g8vNhQKdB24QDmHeY4V4tw/s6Ak5z+jJX9laP5MoQseTOMemAr0gxssjNcH0MCViG8ONI2kksvfFQ==",
       "optionalDependencies": [
@@ -142,7 +152,50 @@
       ],
       "scripts": true,
       "bin": true
+    },
+    "escape-latex@1.2.0": {
+      "integrity": "sha512-nV5aVWW1K0wEiUIEdZ4erkGGH8mDxGyxSeqPzRNtWP7ataw+/olFObw7hujFWlVjNsaDFw5VZ5NzVSIqRgfTiw=="
+    },
+    "fraction.js@5.3.4": {
+      "integrity": "sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ=="
+    },
+    "javascript-natural-sort@0.7.1": {
+      "integrity": "sha512-nO6jcEfZWQXDhOiBtG2KvKyEptz7RVbpGP4vTD2hLBdmNQSsCiicO2Ioinv6UI4y9ukqnBpy+XZ9H6uLNgJTlw=="
+    },
+    "mathjs@14.8.1": {
+      "integrity": "sha512-7UDitJFsXoPbFdK2V7S6uJp7krx9B5bQSzAvCnh7ecsceSK4w0PBbEt9B3IRg9lHqzjk3YJNT1fZg/BNK+4CQw==",
+      "dependencies": [
+        "@babel/runtime",
+        "complex.js",
+        "decimal.js",
+        "escape-latex",
+        "fraction.js",
+        "javascript-natural-sort",
+        "seedrandom",
+        "tiny-emitter",
+        "typed-function"
+      ],
+      "bin": true
+    },
+    "seedrandom@3.0.5": {
+      "integrity": "sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg=="
+    },
+    "tiny-emitter@2.1.0": {
+      "integrity": "sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q=="
+    },
+    "typed-function@4.2.1": {
+      "integrity": "sha512-EGjWssW7Tsk4DGfE+5yluuljS1OGYWiI1J6e8puZz9nTMM51Oug8CD5Zo4gWMsOhq5BI+1bF+rWTm4Vbj3ivRA=="
     }
+  },
+  "redirects": {
+    "https://esm.sh/complex.js@^2.2.5?target=denonext": "https://esm.sh/complex.js@2.4.2?target=denonext",
+    "https://esm.sh/decimal.js@^10.4.3?target=denonext": "https://esm.sh/decimal.js@10.6.0?target=denonext",
+    "https://esm.sh/escape-latex@^1.2.0?target=denonext": "https://esm.sh/escape-latex@1.2.0?target=denonext",
+    "https://esm.sh/fraction.js@^5.2.1?target=denonext": "https://esm.sh/fraction.js@5.3.4?target=denonext",
+    "https://esm.sh/javascript-natural-sort@^0.7.1?target=denonext": "https://esm.sh/javascript-natural-sort@0.7.1?target=denonext",
+    "https://esm.sh/seedrandom@^3.0.5?target=denonext": "https://esm.sh/seedrandom@3.0.5?target=denonext",
+    "https://esm.sh/tiny-emitter@^2.1.0?target=denonext": "https://esm.sh/tiny-emitter@2.1.0?target=denonext",
+    "https://esm.sh/typed-function@^4.2.1?target=denonext": "https://esm.sh/typed-function@4.2.1?target=denonext"
   },
   "remote": {
     "https://deno.land/std@0.208.0/assert/assert.ts": "9a97dad6d98c238938e7540736b826440ad8c1c1e54430ca4c4e623e585607ee",
@@ -242,6 +295,24 @@
     "https://deno.land/std@0.208.0/path/windows/to_file_url.ts": "8e9ea9e1ff364aa06fa72999204229952d0a279dbb876b7b838b2b2fea55cce3",
     "https://deno.land/std@0.208.0/path/windows/to_namespaced_path.ts": "e0f4d4a5e77f28a5708c1a33ff24360f35637ba6d8f103d19661255ef7bfd50d",
     "https://deno.land/std@0.208.0/streams/byte_slice_stream.ts": "c46d7c74836fc8c1a9acd9fe211cbe1bbaaee1b36087c834fb03af4991135c3a",
-    "https://deno.land/std@0.208.0/version.ts": "a3207ea06bba42f09c7c7ab46590b202c98366f26d2ae31622a4839257dbc790"
+    "https://deno.land/std@0.208.0/version.ts": "a3207ea06bba42f09c7c7ab46590b202c98366f26d2ae31622a4839257dbc790",
+    "https://esm.sh/complex.js@2.4.2/denonext/complex.mjs": "2db5eca4eb4d8ea56a049652ef38271a15a778e35454c83775e782fba7cca229",
+    "https://esm.sh/complex.js@2.4.2?target=denonext": "138628e3a7dadd25f30fd1ff9cfe839b49e36f8cc3706603fe211ba6237f5973",
+    "https://esm.sh/decimal.js@10.6.0/denonext/decimal.mjs": "6b826e59480ea004462b2c1bb0d13c606a666fdb2ffe58026ea5c85c390c87ee",
+    "https://esm.sh/decimal.js@10.6.0?target=denonext": "208d405529a515467f200d440b28dd77bf3f61f1a12ec0b508ec0784afc828ff",
+    "https://esm.sh/escape-latex@1.2.0/denonext/escape-latex.mjs": "6983394b23d1dd048a842c236cfe902baabadaf7a6210efa051ff82cd0604670",
+    "https://esm.sh/escape-latex@1.2.0?target=denonext": "363dbeee7093f4bc215311b87f68448db93ee2559e6034e231aa09858c861f60",
+    "https://esm.sh/fraction.js@5.3.4/denonext/fraction.mjs": "e99bbde3dc676ebb4b3df5c455f213dd8831d998fa0891c9ad87136ed9009af5",
+    "https://esm.sh/fraction.js@5.3.4?target=denonext": "87cba35f90234095488b0dd3e493f6b729c2a87460b17fa28b6b0937c3af1883",
+    "https://esm.sh/javascript-natural-sort@0.7.1/denonext/javascript-natural-sort.mjs": "9dd107e481ea6399d79712243ec5b3213b68febe91c54edab9f089b30399dab7",
+    "https://esm.sh/javascript-natural-sort@0.7.1?target=denonext": "f4a622a35e8cb7e7fc2960b43e87e66d242b0fc7b09c42699809096e1a779de7",
+    "https://esm.sh/mathjs@14.8.1": "e67497eaf5450f9a6ff037a03fbe57b5b5cee9b0cede89b3549d7e1c7a035b58",
+    "https://esm.sh/mathjs@14.8.1/denonext/mathjs.mjs": "0600bad39f5eaa7bd7e884b34467592a80f052f29d03b5fa5e3b3f25d9fdc9bd",
+    "https://esm.sh/seedrandom@3.0.5/denonext/seedrandom.mjs": "f3e5135d3ae98210f633536ff952b93749622d778052bf62ee774e34935a8b57",
+    "https://esm.sh/seedrandom@3.0.5?target=denonext": "999745407213d95c449f202aa78709a1e5d7821a077e178494c41748af23beb7",
+    "https://esm.sh/tiny-emitter@2.1.0/denonext/tiny-emitter.mjs": "84a07a538da46737da9b9c53aeeb248e73318c1f0fdeb35b6928bfad280ad187",
+    "https://esm.sh/tiny-emitter@2.1.0?target=denonext": "96cbd3b8eec362b31e2a2258822a49dc8f445c0da85b632465103367a50bb5dd",
+    "https://esm.sh/typed-function@4.2.1/denonext/typed-function.mjs": "47b5f71b5b122d5f4942d14a665e9e2797ea7ebaf33981e7667ed18b21ba1eab",
+    "https://esm.sh/typed-function@4.2.1?target=denonext": "971941eb7e60bac275189de0d5ea7af46bf3ea870b37f7f9af483085290227da"
   }
 }
