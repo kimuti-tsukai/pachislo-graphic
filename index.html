@@ -1483,12 +1483,18 @@
             `🎯 Loading videos from cached JSON for folder: ${folderPath}`,
           );
 
-          const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
-
           // グローバルキャッシュから取得を試行
+          let videos = [];
           let fallbackFiles = {};
           if (globalVideoList) {
-            const videos = globalVideoList[folderName] || [];
+            // Handle into-rush folder paths differently
+            if (folderPath.includes('into-rush')) {
+              const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
+              videos = (globalVideoList['into-rush'] && globalVideoList['into-rush'][folderName]) || [];
+            } else {
+              const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
+              videos = globalVideoList[folderName] || [];
+            }
 
             console.log(`🎬 Found ${videos.length} videos:`, videos);
             if (videos.length > 0) {
@@ -1503,6 +1509,9 @@
               "images/win": globalVideoList["win"] || [],
               "images/fakewin": globalVideoList["fakewin"] || [],
               "images/lose": globalVideoList["lose"] || [],
+              "images/into-rush/win": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["win"]) || [],
+              "images/into-rush/fakewin": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["fakewin"]) || [],
+              "images/into-rush/lose": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["lose"]) || [],
             };
           } else {
             console.warn(
@@ -1513,6 +1522,9 @@
               "images/win": ["once-input-win.mov"],
               "images/fakewin": ["once-input-fakewin.mov"],
               "images/lose": ["once-input-lose.mov"],
+              "images/into-rush/win": ["oga-win.mp4"],
+              "images/into-rush/fakewin": ["oga-win.mp4"],
+              "images/into-rush/lose": ["oga-lose.mp4"],
             };
           }
 
