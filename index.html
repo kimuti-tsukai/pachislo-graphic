@@ -1488,9 +1488,12 @@
           let fallbackFiles = {};
           if (globalVideoList) {
             // Handle into-rush folder paths differently
-            if (folderPath.includes('into-rush')) {
+            if (folderPath.includes("into-rush")) {
               const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
-              videos = (globalVideoList['into-rush'] && globalVideoList['into-rush'][folderName]) || [];
+              videos =
+                (globalVideoList["into-rush"] &&
+                  globalVideoList["into-rush"][folderName]) ||
+                [];
             } else {
               const folderName = folderPath.split("/").pop(); // Extract folder name (win, fakewin, lose, etc.)
               videos = globalVideoList[folderName] || [];
@@ -1509,9 +1512,18 @@
               "images/win": globalVideoList["win"] || [],
               "images/fakewin": globalVideoList["fakewin"] || [],
               "images/lose": globalVideoList["lose"] || [],
-              "images/into-rush/win": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["win"]) || [],
-              "images/into-rush/fakewin": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["fakewin"]) || [],
-              "images/into-rush/lose": (globalVideoList["into-rush"] && globalVideoList["into-rush"]["lose"]) || [],
+              "images/into-rush/win":
+                (globalVideoList["into-rush"] &&
+                  globalVideoList["into-rush"]["win"]) ||
+                [],
+              "images/into-rush/fakewin":
+                (globalVideoList["into-rush"] &&
+                  globalVideoList["into-rush"]["fakewin"]) ||
+                [],
+              "images/into-rush/lose":
+                (globalVideoList["into-rush"] &&
+                  globalVideoList["into-rush"]["lose"]) ||
+                [],
             };
           } else {
             console.warn(
@@ -1552,6 +1564,61 @@
             console.error(
               `❌ Source element not found for player ${this.playerId}`,
             );
+            return;
+          }
+          console.log(
+            `originalVideoSource.src: ${originalVideoSource.src}, videoPath: ${videoPath}`,
+          );
+          function sameTargetAutoBase(a, b, opts = {}) {
+            const {
+              ignoreOrigin = false,
+              ignoreSearch = false,
+              ignoreHash = false,
+              useDocumentRoot = false,
+            } = opts;
+
+            function getAutoBase() {
+              if (typeof document !== "undefined" && document.baseURI) {
+                const base = document.baseURI;
+                if (!useDocumentRoot) return base;
+                try {
+                  return new URL(base).origin + "/";
+                } catch (e) {
+                  return base;
+                }
+              }
+              if (typeof location !== "undefined" && location.href) {
+                const base = location.href;
+                if (!useDocumentRoot) return base;
+                return new URL(base).origin + "/";
+              }
+              throw new Error(
+                "No base available (not running in a browser-like environment).",
+              );
+            }
+
+            const base = getAutoBase();
+
+            function toURL(x) {
+              try {
+                return new URL(x);
+              } catch (e) {
+                // 相対パスは自動取得した base に対して解決
+                return new URL(x, base);
+              }
+            }
+
+            const ua = toURL(a);
+            const ub = toURL(b);
+
+            if (!ignoreOrigin && ua.origin !== ub.origin) return false;
+            if (ua.pathname !== ub.pathname) return false;
+            if (!ignoreSearch && ua.search !== ub.search) return false;
+            if (!ignoreHash && ua.hash !== ub.hash) return false;
+            return true;
+          }
+
+          if (sameTargetAutoBase(originalVideoSource.src, videoPath)) {
             return;
           }
           originalVideoSource.src = videoPath;
