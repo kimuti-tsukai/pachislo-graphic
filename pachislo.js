@@ -617,6 +617,7 @@ var Game = class {
     if (GameState.isUninitialized(this.state)) {
       throw new UninitializedError();
     }
+    console.log("Finish game. State:", this.state);
     this.output.finishGame(this.state);
     this.state = GameState.Uninitialized();
   }
