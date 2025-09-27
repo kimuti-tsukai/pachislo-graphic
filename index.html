@@ -3342,7 +3342,6 @@
             taskQueue1.addTask("default", transition);
           },
           finishGame: (gameState) => {
-            setIsProcessingFinishTask(1, true);
             taskQueue1.addTask("finishGame", gameState);
           },
           lotteryNormal: (lotteryResult, slotResult) => {
@@ -3384,8 +3383,6 @@
             taskQueue2.addTask("default", transition);
           },
           finishGame: (gameState) => {
-            console.log("Finish game");
-            setIsProcessingFinishTask(2, true);
             taskQueue2.addTask("finishGame", gameState);
           },
           lotteryNormal: (lotteryResult, slotResult) => {
