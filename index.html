@@ -1226,6 +1226,16 @@
         }
       }
 
+      function getIsProcessingFinishTask(playerId) {
+        if (playerId === 1) {
+          return isProcessingFinishTask1;
+        } else if (playerId === 2) {
+          return isProcessingFinishTask2;
+        }
+        console.error(`Invalid player ID: ${playerId}`);
+        return false;
+      }
+
       // タスクキューシステム
       class OutputTaskQueue {
         constructor(playerId, updateStateFunction) {
@@ -1241,6 +1251,14 @@
             `Player ${this.playerId} task queued: ${taskType}`,
             taskData,
           );
+
+          if (getIsProcessingFinishTask(this.playerId)) {
+            console.log(
+              `Player ${this.playerId}: Denied adding task because it's already finished`,
+            );
+            return;
+          }
+
           this.queue.push({
             type: taskType,
             data: taskData,
