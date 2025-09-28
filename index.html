@@ -1615,6 +1615,9 @@
             );
             return;
           }
+          
+          originalVideo.muted = false;
+          
           console.log(
             `originalVideoSource.src: ${originalVideoSource.src}, videoPath: ${videoPath}`,
           );
@@ -1755,6 +1758,9 @@
 
                   // スロット開始のタイミングで映像を入れ替えて開始
                   setTimeout(() => {
+                    // 元の映像を一時停止
+                    originalVideo.pause();
+
                     // 映像再生時に既存のvideoタグと入れ替え
                     originalVideo.style.display = "none";
                     rightPanel.appendChild(newVideo);
@@ -1808,6 +1814,9 @@
 
                   // 元のvideoタグを表示に戻す
                   originalVideo.style.display = "";
+
+                  // 元の video を再生
+                  originalVideo.play();
 
                   console.log(
                     `Player ${this.playerId} video replaced back to original`,
