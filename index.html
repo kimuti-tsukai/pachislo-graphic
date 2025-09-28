@@ -1283,9 +1283,10 @@
             taskData,
           );
 
-          if (getIsProcessingFinishTask(this.playerId)) {
+          if (getIsProcessingFinishTask(this.playerId) && taskType !== "finishGame") {
             console.log(
-              `Player ${this.playerId}: Denied adding task because it's already finished`,
+              `Player ${this.playerId}: Denied adding task because it's already finished. Denied Task:`,
+              taskType,
             );
             return;
           }
