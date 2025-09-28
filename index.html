@@ -1212,6 +1212,37 @@
         rush: "images/background/background-rush.mp4",
       };
 
+      const defaultConfig = {
+        balls: {
+          initBalls: 100,
+          incrementalBalls: 15,
+          incrementalRush: 30,
+        },
+        probability: {
+          normal: {
+            win: 0.2,
+            fakeWin: 0.3,
+            fakeLose: 0.15,
+          },
+          intoRush: {
+            win: 0.8,
+            fakeWin: 0.3,
+            fakeLose: 0.9,
+          },
+          rush: {
+            win: 0.48,
+            fakeWin: 0.2,
+            fakeLose: 0.1,
+          },
+          rushContinue: {
+            win: 0.5,
+            fakeWin: 0.25,
+            fakeLose: 0.1,
+          },
+          rushContinueFn: "0.3 ^ (n - 1)",
+        },
+      };
+
       let isProcessingFinishTask1 = false;
       let isProcessingFinishTask2 = false;
 
@@ -3547,39 +3578,12 @@
         if (storageConfig1) {
           objectConfig1 = storageConfig1;
         } else {
-          objectConfig1 = {
-            balls: {
-              initBalls: 100,
-              incrementalBalls: 15,
-              incrementalRush: 30,
-            },
-            probability: {
-              normal: {
-                win: 0.16,
-                fakeWin: 0.3,
-                fakeLose: 0.15,
-              },
-              intoRush: {
-                win: 0.8,
-                fakeWin: 0.3,
-                fakeLose: 0.15,
-              },
-              rush: {
-                win: 0.48,
-                fakeWin: 0.2,
-                fakeLose: 0.05,
-              },
-              rushContinue: {
-                win: 0.5,
-                fakeWin: 0.25,
-                fakeLose: 0.1,
-              },
-              rushContinueFn: "0.3 ^ (n - 1)",
-            },
-          };
+          objectConfig1 = defaultConfig;
         }
 
         config1 = Config.fromJsonObject(objectConfig1);
+
+        console.log("Config1", config1);
 
         const storageConfig2 = parseJsonOrNull(
           localStorage.getItem("storageConfig2"),
@@ -3588,39 +3592,12 @@
         if (storageConfig2) {
           objectConfig2 = storageConfig2;
         } else {
-          objectConfig2 = {
-            balls: {
-              initBalls: 100,
-              incrementalBalls: 15,
-              incrementalRush: 30,
-            },
-            probability: {
-              normal: {
-                win: 0.16,
-                fakeWin: 0.3,
-                fakeLose: 0.15,
-              },
-              intoRush: {
-                win: 0.8,
-                fakeWin: 0.3,
-                fakeLose: 0.15,
-              },
-              rush: {
-                win: 0.48,
-                fakeWin: 0.2,
-                fakeLose: 0.05,
-              },
-              rushContinue: {
-                win: 0.5,
-                fakeWin: 0.25,
-                fakeLose: 0.1,
-              },
-              rushContinueFn: "0.3 ^ (n - 1)",
-            },
-          };
+          objectConfig2 = defaultConfig;
         }
 
         config2 = Config.fromJsonObject(objectConfig2);
+
+        console.log("Config2", config2);
 
         // 2つのゲームインスタンスを作成
         const wasmGame1 = new WasmGame(input1, output1, config1);
@@ -4511,49 +4488,49 @@
         try {
           // Reset form values to defaults
           document.getElementById(`config-init-balls-${playerId}`).value =
-            defaultConfigValues.initBalls;
+            defaultConfig.balls.initBalls;
           document.getElementById(
             `config-incremental-balls-${playerId}`,
-          ).value = defaultConfigValues.incrementalBalls;
+          ).value = defaultConfig.balls.incrementalBalls;
           document.getElementById(`config-incremental-rush-${playerId}`).value =
-            defaultConfigValues.incrementalRush;
+            defaultConfig.balls.incrementalRush;
 
           document.getElementById(`config-normal-win-${playerId}`).value =
-            defaultConfigValues.normalWin;
+            defaultConfig.probability.normal.win;
           document.getElementById(`config-normal-fake-win-${playerId}`).value =
-            defaultConfigValues.normalFakeWin;
+            defaultConfig.probability.normal.fakeWin;
           document.getElementById(`config-normal-fake-lose-${playerId}`).value =
-            defaultConfigValues.normalFakeLose;
+            defaultConfig.probability.normal.fakeLose;
 
           document.getElementById(`config-into-rush-win-${playerId}`).value =
-            defaultConfigValues.intoRushWin;
+            defaultConfig.probability.intoRush.win;
           document.getElementById(
             `config-into-rush-fake-win-${playerId}`,
-          ).value = defaultConfigValues.intoRushFakeWin;
+          ).value = defaultConfig.probability.intoRush.fakeWin;
           document.getElementById(
             `config-into-rush-fake-lose-${playerId}`,
-          ).value = defaultConfigValues.intoRushFakeLose;
+          ).value = defaultConfig.probability.intoRush.fakeLose;
 
           document.getElementById(`config-rush-win-${playerId}`).value =
-            defaultConfigValues.rushWin;
+            defaultConfig.probability.rush.win;
           document.getElementById(`config-rush-fake-win-${playerId}`).value =
-            defaultConfigValues.rushFakeWin;
+            defaultConfig.probability.rush.fakeWin;
           document.getElementById(`config-rush-fake-lose-${playerId}`).value =
-            defaultConfigValues.rushFakeLose;
+            defaultConfig.probability.rush.fakeLose;
 
           document.getElementById(
             `config-rush-continue-win-${playerId}`,
-          ).value = defaultConfigValues.rushContinueWin;
+          ).value = defaultConfig.probability.rushContinue.win;
           document.getElementById(
             `config-rush-continue-fake-win-${playerId}`,
-          ).value = defaultConfigValues.rushContinueFakeWin;
+          ).value = defaultConfig.probability.rushContinue.fakeWin;
           document.getElementById(
             `config-rush-continue-fake-lose-${playerId}`,
-          ).value = defaultConfigValues.rushContinueFakeLose;
+          ).value = defaultConfig.probability.rushContinue.fakeLose;
 
           document.getElementById(
             `config-rush-continue-win-expression-${playerId}`,
-          ).value = defaultConfigValues.rushContinueExpression;
+          ).value = defaultConfig.probability.rushContinueFn;
 
           // Reset nails to empty (default is no nails)
           if (playerId === 1) {
